@@ -143,6 +143,32 @@ def macros(rec, catalogue):
         f += item["g"] * arr[2] / 100
     return (p, c, f, 4*p + 4*c + 9*f)
 
+def rebalance_portions(recipes, catalogue):
+    """Corrige les quantités d'une portion, sans inventer de valeurs nutritionnelles.
+
+    Les modèles de langage surestiment parfois les portions. Avant de constituer
+    les 7 jours, on ajuste chaque recette vers le budget énergétique de son repas.
+    Les macros sont ensuite intégralement recalculées à partir du catalogue.
+    """
+    budgets = {"Petit-déjeuner": 450, "Déjeuner": 600,
+               "Collation": 240, "Dîner": 625}
+    for key, rec in recipes.items():
+        kcal = macros(rec, catalogue)[3]
+        if kcal < 100:
+            raise ValueError(f"Apports énergétiques trop faibles pour {key} : {kcal:.0f} kcal")
+        factor = budgets[rec["meal"]] / kcal
+        # Un écart très important indique probablement une mauvaise recette,
+        # pas simplement un besoin d'ajuster sa portion.
+        if not 0.45 <= factor <= 2.2:
+            raise ValueError(f"Portions incohérentes pour {key} : {kcal:.0f} kcal")
+        for item in rec["items"]:
+            item["g"] = max(2, min(400, round(item["g"] * factor)))
+        adjusted_kcal = macros(rec, catalogue)[3]
+        if abs(adjusted_kcal - budgets[rec["meal"]]) > 110:
+            raise ValueError(f"Impossible de rééquilibrer {key} : {adjusted_kcal:.0f} kcal")
+    return recipes
+
+
 def build_plan(recipes, catalogue):
     groups = {}
     for key, rec in recipes.items():
@@ -200,6 +226,7 @@ def main():
         raw = generate_recipes(catalogue, week)
         try:
             recipes = validate(raw, catalogue, week)
+            rebalance_portions(recipes, catalogue)
             plan, nutrition = build_plan(recipes, catalogue)
             break
         except ValueError as err:
