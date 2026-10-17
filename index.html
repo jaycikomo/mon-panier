@@ -44,6 +44,7 @@
 .ai-banner span{font-size:12px;color:#53705c}
 .ai-modal-photo{margin-top:14px;width:100%;max-height:230px;overflow:hidden;border-radius:12px;background:#f0f3ec}
 .ai-modal-img{width:100%;height:230px;object-fit:cover;display:block}
+.ai-card-photo{width:100%;height:100%;min-height:105px;object-fit:cover;display:block}.recipe-pics:has(.ai-card-photo){display:block;overflow:hidden}.recipe-pics .ai-card-photo:not(img){display:flex;align-items:center;justify-content:center;font-size:42px}
 </style>
 </head>
 <body>
@@ -90,7 +91,7 @@ function integrateAI(weekly){
   state.weekPlan=weekly.plan.map(day=>day.slice());
   DATA.plan=state.weekPlan;
   state.aiApplied=weekly.week;
-  state.checked={};state.manual=[];ui.tab='plan';
+  if(state.importedWeekKey!==weekly.week){state.checked={};state.manual=[]}ui.tab='plan';
  }else DATA.plan=state.weekPlan;
  aiStatus='ready';store();return true;
 }
@@ -211,6 +212,12 @@ function load(){
   }catch(e){console.warn('Lien de partage illisible',e)}
  }
  state={...defaults,...previous,...(imported||{})};
+ if(imported&&!imported.weekPlan){
+   // Le lien transmet une copie légère des coches ; les recettes IA seront récupérées séparément.
+   state.weekPlan=weeklyPlan(mondayKey());
+   state.weekKey=mondayKey();
+   state.importedWeekKey=imported.weekKey===state.weekKey?state.weekKey:null;
+ }
  state.aiRecipes=previous.aiRecipes&&typeof previous.aiRecipes==='object'?previous.aiRecipes:{};
  for(const [id,recipe] of Object.entries(state.aiRecipes)){if(validAIRecipe(id,recipe))DATA.recipes[id]=recipe}
  state.archives=Array.isArray(previous.archives)?previous.archives.filter(x=>x&&isValidPlan(x.plan)&&typeof x.key==='string').slice(0,52):[];
@@ -277,7 +284,7 @@ function listResults(){const a=listData().filter(x=>{const chosenStore=assigned(
  return aisleOrder.map(aisle=>{let items=a.filter(x=>x.aisle===aisle);if(!items.length)return '';return `<section class="list-group"><div class="list-group-title"><h3>${esc(aisle)}</h3><span>${items.length} article(s)</span></div><div class="item-list">${items.map(itemCard).join('')}</div></section>`}).join('');}
 function itemCard(x){const orig=x.id,subbed=!!state.subs[orig],info=DATA.ingredients[x.eff],storesList=chosen(),selectedStore=assigned(orig,x.aisle);return `<article class="item-card ${state.checked[orig]?'done':''}" data-product="${esc(orig)}"><input class="product-check" type="checkbox" data-check="${esc(orig)}" aria-label="Acheté : ${esc(x.name)}" ${state.checked[orig]?'checked':''}>${x.isManual?`<span class="prod-emoji">🛍️</span>`:img(x.eff,src(x.eff)?'prod-img':'prod-emoji')}<div class="prod-main"><div class="prod-name">${esc(x.name)}</div><div class="prod-qty">${x.isManual?esc(x.qty||'À acheter'):gram(x.g,x.eff)}</div><div class="prod-actions">${x.isManual?`<button class="linkbtn" data-action="delete-manual" data-id="${esc(orig)}">Supprimer</button>`:`<button class="linkbtn" data-action="toggle-sub" data-id="${orig}">${ui.openSub===orig?'Fermer':subbed?'↺ Changer le remplacement':'⇄ Si indisponible'}</button>`}${subbed?`<span class="store-tag">À la place : ${esc(DATA.ingredients[orig].name)}</span>`:''}</div>${storesList.length?`<div style="margin-top:7px"><select class="store-assign" data-assign="${esc(orig)}" aria-label="Magasin pour ${esc(x.name)}">${storesList.map(s=>`<option value="${s.id}" ${s.id===selectedStore?'selected':''}>📍 ${esc(s.name)} · ${esc(s.town)}</option>`).join('')}</select></div>`:''}${ui.openSub===orig&&!x.isManual?subPanel(orig):''}</div></article>`}
 function subPanel(id){const info=DATA.ingredients[id];return `<div class="sub-panel"><b class="small">Pas en rayon ? Remplacez par :</b><div class="sub-options">${info.subs.map(s=>`<button class="subbtn" data-action="choose-sub" data-id="${id}" data-sub="${s}">${esc(DATA.ingredients[s].name)}</button>`).join('')}${state.subs[id]?`<button class="subbtn" data-action="choose-sub" data-id="${id}" data-sub="">↺ Produit d'origine</button>`:''}</div><div class="small muted" style="margin-top:7px">Même quantité indicative. Les valeurs nutritionnelles peuvent changer.</div></div>`}
-function recipeCard(key){const r=DATA.recipes[key],m=mealMacros(key);const ids=r.items.filter(it=>it.id!=='huile').slice(0,2).map(x=>state.subs[x.id]||x.id);return `<button class="card recipe-card" data-action="open-recipe" data-id="${key}"><div class="recipe-pics">${r.photo?mealThumb(key,'prod-img'):ids.map(id=>img(id,src(id)?'prod-img':'prod-emoji')).join('')}</div><div class="recipe-info"><span class="tiny-pill">${r.meal}</span><h3>${esc(r.name)}</h3><p>⏱️ ${esc(r.time)} · 1 portion</p><div class="macros">≈ ${fmt(m.cal)} kcal · ${fmt(m.p)} g protéines</div></div></button>`}
+function recipeCard(key){const r=DATA.recipes[key],m=mealMacros(key);const ids=r.items.filter(it=>it.id!=='huile').slice(0,2).map(x=>state.subs[x.id]||x.id);return `<button class="card recipe-card" data-action="open-recipe" data-id="${key}"><div class="recipe-pics">${r.photo?mealThumb(key,'ai-card-photo'):ids.map(id=>img(id,src(id)?'prod-img':'prod-emoji')).join('')}</div><div class="recipe-info"><span class="tiny-pill">${r.meal}</span><h3>${esc(r.name)}</h3><p>⏱️ ${esc(r.time)} · 1 portion</p><div class="macros">≈ ${fmt(m.cal)} kcal · ${fmt(m.p)} g protéines</div></div></button>`}
 function recipesView(){let keys=Object.keys(DATA.recipes).filter(k=>ui.recipeFilter==='Tous'||DATA.recipes[k].meal===ui.recipeFilter);return `<div class="section-head"><div><h2>Idées de recettes</h2><p>Les repas de la semaine, réalisables avec votre panier.</p></div></div><div class="store-filters">${['Tous','Petit-déjeuner','Déjeuner','Collation','Dîner'].map(c=>`<button class="chip ${ui.recipeFilter===c?'active':''}" data-action="recipe-filter" data-filter="${c}">${c}</button>`).join('')}</div><div class="recipe-grid">${keys.map(recipeCard).join('')}</div>`}
 function storesView(){return `<div class="section-head"><div><h2>Magasins, marchés & supérettes</h2><p>Choisissez vos lieux. La liste de courses vous permet ensuite d'assigner chaque article.</p></div><span class="tiny-pill">${chosen().length} sélectionné(s)</span></div>${storeFilters()}${storeCards()}<div class="notice notice-amber" style="margin-top:17px">📅 <b>Marché du jeudi :</b> jeudi 8h–12h, place de la Mairie. <b>Nouveau marché du samedi :</b> à partir du 7 novembre 2026, 8h30–13h. Vérifiez les horaires auprès des commerçants, en particulier les jours fériés.</div>`}
 function modal(){if(!ui.modal)return '';const key=ui.modal,r=DATA.recipes[key];if(!r)return '';const m=mealMacros(key);return `<div class="modal-overlay" data-action="close-modal-overlay"><section class="modal" role="dialog" aria-modal="true" aria-label="${esc(r.name)}"><div class="modal-top"><div><span class="tiny-pill">${esc(r.meal)} · ${esc(r.time)}</span><h2 style="margin-top:12px">${esc(r.name)}</h2><p>Pour <b>1 personne</b> · ≈ ${fmt(m.cal)} kcal · P ${fmt(m.p)} g · G ${fmt(m.c)} g · L ${fmt(m.f)} g</p></div><button class="close" data-action="close-modal" aria-label="Fermer">×</button></div>${r.photo&&state.photos?'<div class="ai-modal-photo">'+mealThumb(key,'ai-modal-img')+'</div>':''}<h3 style="font-size:15px;margin:22px 0 7px">🧺 Ingrédients par personne</h3>${r.items.map(({id,g})=>{const effective=state.subs[id]||id,inf=DATA.ingredients[effective];return `<div class="ingredient-line">${img(effective,src(effective)?'prod-img':'prod-emoji')}<span class="nm">${esc(inf.name)}${id!==effective?` <span class="small muted">(remplacement)</span>`:''}</span><span class="qty">${gram(g,effective)}</span></div>`}).join('')}<div class="step" style="margin-top:19px"><div class="step-title">👩‍🍳 Comment préparer ?</div><p style="margin:0;color:#405f4b">${esc(r.steps)}</p></div><div class="notice" style="margin-top:12px">Pour ${state.people} personnes, multipliez les quantités par ${state.people}. Les produits ont déjà été regroupés dans la liste de courses.</div><div class="modal-footer"><button class="btn btn-light" data-action="close-modal">Fermer</button><button class="btn" data-action="go-shop-from-recipe">Voir la liste →</button></div></section></div>`}
@@ -320,7 +327,7 @@ async function share(){
 async function copyList(){await copyText(buildListText())}
 async function shareLink(){
  if(location.protocol==='file:'){notify('Publiez l’application sur GitHub Pages pour partager le lien.');return}
- const payload={ready:true,weekKey:state.weekKey,weekPlan:state.weekPlan,people:state.people,stores:state.stores,checked:state.checked,subs:state.subs,assign:state.assign,manual:state.manual,photos:state.photos};
+ const payload={ready:true,weekKey:state.weekKey,people:state.people,stores:state.stores,checked:state.checked,subs:state.subs,assign:state.assign,manual:state.manual,photos:state.photos};
  const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'');
  const url=location.origin+location.pathname+'?partage='+encoded;
  try{if(navigator.share){await navigator.share({title:'Importer ma liste Mon Panier',text:'Ouvre ce lien pour importer une copie du menu et de la liste 🥬',url});return}}
