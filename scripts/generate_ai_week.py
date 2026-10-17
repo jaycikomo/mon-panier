@@ -51,9 +51,18 @@ def generate_recipes(catalogue, week):
                   "G": val["macros"][1], "L": val["macros"][2]}
                  for key, val in catalogue.items()]
     previous = []
-    if LATEST.exists():
+    history_dir = ROOT / "data/ai/weeks"
+    if history_dir.is_dir():
+        for p in sorted(history_dir.glob("*.json"))[-8:]:
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                previous.extend(r.get("name", "") for r in data.get("recipes", {}).values())
+            except (OSError, ValueError):
+                continue
+    if not previous and LATEST.exists():
         data = json.loads(LATEST.read_text(encoding="utf-8"))
         previous = [r.get("name", "") for r in data.get("recipes", {}).values()]
+    month = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][int(week[5:7])-1]
     instructions = (
         "Tu es cuisinier et diététicien pédagogique. Conçois EXACTEMENT 20 recettes "
         "originales en français pour une famille qui fait ses courses chez Lidl, ALDI, Netto "
@@ -67,13 +76,13 @@ def generate_recipes(catalogue, week):
         "name, meal, time, steps, items; items = tableau d'objets {id,g}. "
         "Chaque id d'ingrédient doit exister dans le catalogue fourni, g est entier >0. "
         "Au moins 3 ingrédients par recette et au maximum 8. "
-        "Cuisine accessible, saison d'octobre et recettes variées. "
+        "Cuisine accessible, ingrédients de saison en " + month + " et recettes variées. "
         "Visée nutritionnelle à partir des valeurs /100 g ci-dessous : "
         "Petit-déjeuner environ 450kcal P30 G50 L14; Déjeuner 600kcal P45 G55 L18; "
         "Collation 240kcal P20 G25 L8; Dîner 625kcal P35 G50 L35. "
         "Objectif journalier total ~1915 kcal, P130 G180 L75. "
         "Ne déduis pas les valeurs des aliments si déjà fournies; les chiffres seront recalculés. "
-        "Évite les anciennes recettes : " + json.dumps(previous[:40], ensure_ascii=False)
+        "Évite les anciennes recettes : " + json.dumps(previous[-80:], ensure_ascii=False)
     )
     result = request("chat/completions", {
         "model": MODEL,
@@ -187,9 +196,16 @@ def main():
             print("Recettes de cette semaine déjà disponibles : aucune nouvelle dépense.")
             return
     catalogue = ingredients()
-    raw = generate_recipes(catalogue, week)
-    recipes = validate(raw, catalogue, week)
-    plan, nutrition = build_plan(recipes, catalogue)
+    for attempt in range(2):
+        raw = generate_recipes(catalogue, week)
+        try:
+            recipes = validate(raw, catalogue, week)
+            plan, nutrition = build_plan(recipes, catalogue)
+            break
+        except ValueError as err:
+            print(f"Tentative {attempt+1}/2 invalide :", err, file=sys.stderr)
+            if attempt == 1:
+                raise
     images_limit = min(7, max(0, int(os.getenv("AI_IMAGE_COUNT", "7"))))
     if images_limit:
         # Une photo par dîner utilisé au menu, au plus 7 par semaine.
