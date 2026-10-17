@@ -70,10 +70,50 @@ function isValidPlan(p){
  return Array.isArray(p)&&p.length===7&&p.every(d=>Array.isArray(d)&&d.length===4&&d.every(x=>typeof x==='string'&&!!DATA.recipes[x]));
 }
 function weeklyPlan(key){
- const weeks=Math.round((Date.parse(key+'T00:00:00Z')-Date.UTC(2026,9,12))/604800000);
- const b=['b1','b2','b3','b4'], l=['l1','l2','l3','l4','l5','l6','l7','l8','l9','l10','l11'],s=['s1','s2','s3','s4'],d=['d1','d2','d3','d4','d5','d6','d7','d8','d9','d10','d11'];
- const pick=(a,n)=>a[((n%a.length)+a.length)%a.length];
- return days.map((_,i)=>[pick(b,i+weeks),pick(l,i+weeks*3),pick(s,i+weeks*2),pick(d,i+weeks*5)]);
+ // Choisir chaque journée pour rester près des macros cibles, sans répéter les déjeuners ni les dîners.
+ const groups={
+  b:['b1','b2','b3','b4'],
+  l:['l1','l2','l3','l4','l5','l6','l7','l8','l9','l10','l11'],
+  s:['s1','s2','s3','s4'],
+  d:['d1','d2','d3','d4','d5','d6','d7','d8','d9','d10','d11']
+ };
+ const m={};
+ for(const ids of Object.values(groups))for(const k of ids){
+  if(m[k])continue;
+  const v={p:0,c:0,f:0,cal:0};
+  for(const it of DATA.recipes[k].items){
+   const nutrients=DATA.ingredients[it.id].macros;
+   v.p+=nutrients[0]*it.g/100;v.c+=nutrients[1]*it.g/100;v.f+=nutrients[2]*it.g/100;
+  }
+  v.cal=4*v.p+4*v.c+9*v.f;m[k]=v;
+ }
+ function noise(t){
+  let hash=2166136261;
+  for(let j=0;j<t.length;j++)hash=Math.imul(hash^t.charCodeAt(j),16777619);
+  return (hash>>>0)/4294967296;
+ }
+ const candidates=[];
+ for(const b of groups.b)for(const l of groups.l)for(const s of groups.s)for(const d of groups.d){
+  const picks=[b,l,s,d],total={p:0,c:0,f:0,cal:0};
+  for(const id of picks){for(const n of ['p','c','f','cal'])total[n]+=m[id][n]}
+  const score=((total.cal-1915)/35)**2+((total.p-130)/6)**2+((total.c-180)/10)**2+((total.f-75)/6)**2;
+  candidates.push({picks,score});
+ }
+ const count={};
+ const result=[];
+ for(let i=0;i<7;i++){
+  let best=null,bestScore=Infinity;
+  for(const candidate of candidates){
+   const [b,l,s,d]=candidate.picks;
+   const score=candidate.score+(count[l]?40:0)+(count[d]?40:0)+
+       (count[b]||0)*.6+(count[s]||0)*.6+
+       noise(key+'-'+i+'-'+candidate.picks.join('-'))*1.2;
+   if(score<bestScore){best=candidate.picks;bestScore=score}
+  }
+  result.push(best);
+  for(const item of best)count[item]=(count[item]||0)+1;
+ }
+ return result;
 }
 function rollover(){
  const today=mondayKey();
