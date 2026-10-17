@@ -1,0 +1,61 @@
+name: Mon Panier - Recettes IA du lundi
+
+on:
+  schedule:
+    # Tous les lundis vers 05:37 UTC (07:37 heure d'été en France).
+    - cron: '37 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Regénérer les recettes de cette semaine (appel API facturé)'
+        type: boolean
+        default: false
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mon-panier-recettes-ia
+  cancel-in-progress: false
+
+jobs:
+  recettes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Télécharger le projet
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier la configuration de l'IA
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "::error::Ajoutez OPENAI_API_KEY dans Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+      - name: Créer recettes, menus et photos de la semaine
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_TEXT_MODEL: gpt-5-mini
+          AI_IMAGE_MODEL: gpt-image-1-mini
+          AI_IMAGE_COUNT: ${{ vars.AI_IMAGE_COUNT || '7' }}
+          FORCE: ${{ github.event.inputs.force || 'false' }}
+        run: python scripts/generate_ai_week.py
+      - name: Enregistrer les nouveaux menus sur GitHub
+        run: |
+          git config user.name "mon-panier-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ai images/ia 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Aucune modification à publier."
+            exit 0
+          fi
+          git commit -m "Menus IA de la semaine"
+          git push origin HEAD:main
