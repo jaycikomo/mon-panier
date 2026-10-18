@@ -70,13 +70,13 @@ La priorité de courses est **Lidl La Destrousse → Aldi La Bouilladisse → Ne
 
 **Exemple :** du riz est attribué à Lidl.
 
-1. Tu ne le trouves pas chez Lidl : clique sur **« Pas disponible chez Lidl »**.
+1. Tu ne le trouves pas chez Lidl : clique sur **« Je ne l’ai pas trouvé ici → Essayer Aldi »**.
 2. L'application propose alors **Aldi La Bouilladisse**.
 3. S'il manque aussi chez Aldi, elle propose **Netto La Destrousse**.
 4. Si tu as sélectionné d'autres enseignes (par exemple Intermarché), elles peuvent servir de repli.
-5. Un bouton permet d'annuler les signalements d'indisponibilité pour cet article.
+5. Le bouton **« Annuler et recommencer »** efface tes signalements pour cet article.
 
-Ce mécanisme est **une préférence de magasin enregistrée sur ton appareil**, pas une preuve qu'Aldi ou Netto ont le produit en stock.
+Ce mécanisme mémorise **ce que tu as constaté en rayon sur cet appareil**. Les autres magasins sont seulement **des endroits où chercher ensuite**, sans garantie de stock. La liste indique clairement « Magasin où chercher ». Une fiche produit en ligne n'est pas une preuve de disponibilité locale.
 
 ### Autres possibilités pratiques
 
@@ -196,10 +196,10 @@ Ce qu'il faut bien distinguer :
 
 Le script [`sync_store_catalog.py`](scripts/sync_store_catalog.py) exploite deux types de sources :
 
-- **Des références de produits ou de gammes identifiées sur les sites officiels** de Lidl, Aldi et Netto, conservées dans `data/retail/official-references.json`.
+- **Des fiches directes de produits individuels** conservées dans `data/retail/official-references.json`. Les pages générales de rayon et les anciennes promotions ont été écartées pour éviter des références trompeuses.
 - **Open Food Facts**, une base participative, lorsque son service répond correctement.
 
-Il rassemble ensuite ces données dans [`data/retail/catalog.json`](data/retail/catalog.json).
+Il rassemble ensuite ces données dans [`data/retail/catalog.json`](data/retail/catalog.json). Les données du catalogue sont **partielles** : elles ne représentent pas l'intégralité des assortiments des magasins.
 
 Si Open Food Facts est en panne (par exemple une erreur **503**), les références officielles déjà enregistrées servent de **solution de secours**. On n'invente pas de produits ni de stocks.
 
@@ -207,9 +207,9 @@ Le catalogue contient notamment : le nom d'un produit, l'enseigne, l'ingrédient
 
 ### Attention à la différence « référencé » / « disponible »
 
-Une fiche vue sur un site ne signifie **pas** que le produit est actuellement en rayon à La Destrousse ou La Bouilladisse. Les promotions anciennes et leurs prix ne doivent pas non plus être présentés comme des offres actuelles.
+Une fiche vue sur un site ne signifie **pas** que le produit est actuellement en rayon à La Destrousse ou La Bouilladisse. **Aucune fiche précise enregistrée pour Netto ne signifie pas que Netto ne vend pas l'article** : l'information est simplement incomplète. Les promotions anciennes et leurs prix ne doivent pas être présentés comme des offres actuelles.
 
-C'est précisément pour cela que Mon Panier te permet de signaler **« Pas disponible ici »**, puis de passer à l'enseigne suivante.
+C'est précisément pour cela que Mon Panier te permet de signaler **« Je ne l'ai pas trouvé ici »**, puis de chercher dans une autre enseigne.
 
 ### Quand cette mise à jour s'exécute-t-elle ?
 
