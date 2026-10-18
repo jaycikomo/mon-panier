@@ -268,7 +268,7 @@ function listData(){const items={};DATA.plan.flat().forEach(key=>DATA.recipes[ke
  return [...all,...state.manual.map(x=>({...x,name:x.name,aisle:'Ajouts personnels',isManual:true}))];}
 // Ordre de priorité familial : Lidl, Aldi, Intermarché, puis magasins de secours.
 // Ceci est une préférence de répartition, pas une vérification des stocks en magasin.
-const STORE_PRIORITY=['lidl-destrousse','lidl-auriol','aldi','inter','netto'];
+const STORE_PRIORITY=['lidl-destrousse','aldi','inter','netto'];
 function chosen(){
  return stores.filter(s=>state.stores.includes(s.id)).sort((a,b)=>{
   const ia=STORE_PRIORITY.indexOf(a.id),ib=STORE_PRIORITY.indexOf(b.id);
