@@ -71,17 +71,19 @@ def retail_inventory(catalogue):
             print("Catalogue partiel (", len(available),
                   "ingrédients), recettes habituelles conservées.")
             return catalogue, {"mode": "fallback", "matches": len(available),
+                               "documented_ids": sorted(available),
                                "reason": "Référencement incomplet"}
         selected = {i: value for i, value in catalogue.items() if i in available}
         print("Recettes limitées à", len(selected),
               "ingrédients rapprochés des catalogues Lidl, Aldi et Netto.")
         return selected, {"mode": "evidence", "matches": len(selected),
+                          "documented_ids": sorted(available),
                           "source": "Open Food Facts", "updated": snapshot.get("updated")}
     except (OSError, ValueError, TypeError, KeyError) as err:
         print("Catalogue produits inexploitable :", err)
         return catalogue, {"mode": "fallback", "reason": "Catalogue invalide"}
 
-def generate_recipes(catalogue, week):
+def generate_recipes(catalogue, week, retail_meta):
     inventory = [{"id": key, "nom": val["name"], "P": val["macros"][0],
                   "G": val["macros"][1], "L": val["macros"][2]}
                  for key, val in catalogue.items()]
@@ -102,13 +104,13 @@ def generate_recipes(catalogue, week):
         "Tu es cuisinier et diététicien pédagogique. Conçois EXACTEMENT 20 recettes "
         "originales en français pour une famille qui fait principalement ses courses "
         "en priorité chez Lidl (La Destrousse), puis Aldi (La Bouilladisse), puis "
-        "Intermarché (La Destrousse). Privilégie les produits de base bon marché "
+        "Netto (La Destrousse). Privilégie les produits de base bon marché "
         "et les ingrédients généralement référencés dans ces trois enseignes : "
         "œufs, skyr, viande, poisson courant, conserves, féculents et fruits/légumes de saison. "
         "Évite les produits rares, spécialisés ou spécifiques à une marque et propose "
         "des préparations réalisables avec une offre de supermarché standard. "
         "Tu ne connais PAS les stocks ni les promotions en temps réel : ne les invente pas. "
-        "Les autres magasins et marchés sont des solutions de repli. "
+        "Intermarché, les autres magasins et marchés sont des solutions de repli. "
         "Chaque recette doit contenir un titre, 2-4 phrases "
         "de préparation concrètes, un temps (ex: '20 min'), et des ingrédients pesés CRUS "
         "en grammes pour UNE personne. Les recettes de la semaine doivent être nouvelles et "
@@ -125,14 +127,17 @@ def generate_recipes(catalogue, week):
         "Collation 240kcal P20 G25 L8; Dîner 625kcal P35 G50 L35. "
         "Objectif journalier total ~1915 kcal, P130 G180 L75. "
         "Ne déduis pas les valeurs des aliments si déjà fournies; les chiffres seront recalculés. "
-        "Évite les anciennes recettes : " + json.dumps(previous[-80:], ensure_ascii=False)
+        "Évite les anciennes recettes : " + json.dumps(previous[-25:], ensure_ascii=False)
     )
     result = request("chat/completions", {
         "model": MODEL,
         "messages": [
             {"role": "system", "content": instructions},
             {"role": "user", "content": "Semaine du " + week + ". Catalogue (valeurs par 100 g): " +
-             json.dumps(inventory, ensure_ascii=False, separators=(",", ":"))}
+             json.dumps(inventory, ensure_ascii=False, separators=(",", ":")) +
+             (". Ingrédients également documentés dans les fiches enseignes (référencement, pas stock): " +
+              ",".join(retail_meta.get("documented_ids", []))
+              if retail_meta.get("documented_ids") else "")}
         ],
         "response_format": {"type": "json_object"},
         "max_completion_tokens": 16000
@@ -265,18 +270,12 @@ def main():
             print("Recettes de cette semaine déjà disponibles : aucune nouvelle dépense.")
             return
     catalogue, retail_meta = retail_inventory(ingredients())
-    for attempt in range(2):
-        raw = generate_recipes(catalogue, week)
-        try:
-            recipes = validate(raw, catalogue, week)
-            rebalance_portions(recipes, catalogue)
-            plan, nutrition = build_plan(recipes, catalogue)
-            break
-        except ValueError as err:
-            print(f"Tentative {attempt+1}/2 invalide :", err, file=sys.stderr)
-            if attempt == 1:
-                raise
-    images_limit = min(7, max(0, int(os.getenv("AI_IMAGE_COUNT", "7"))))
+    # Un seul appel texte à l'IA par semaine : pas de deuxième facture en cas d'erreur.
+    raw = generate_recipes(catalogue, week, retail_meta)
+    recipes = validate(raw, catalogue, week)
+    rebalance_portions(recipes, catalogue)
+    plan, nutrition = build_plan(recipes, catalogue)
+    images_limit = min(2, max(0, int(os.getenv("AI_IMAGE_COUNT", "0"))))
     if images_limit:
         # Une photo par dîner utilisé au menu, au plus 7 par semaine.
         for key in dict.fromkeys(day[3] for day in plan):
