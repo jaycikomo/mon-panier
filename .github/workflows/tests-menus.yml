@@ -1,0 +1,29 @@
+name: Mon Panier - Tests gratuits des menus mensuels
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/generate_ai_week.py'
+      - 'tests/test_monthly_menu.py'
+      - '.github/workflows/tests-menus.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Télécharger le projet
+        uses: actions/checkout@v5
+      - name: Installer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Vérifier syntaxe sans appeler OpenAI
+        run: python -m py_compile scripts/generate_ai_week.py
+      - name: Tester génération, équilibre et cache quatre semaines
+        run: python -m unittest discover -s tests -p 'test_monthly_menu.py' -v
