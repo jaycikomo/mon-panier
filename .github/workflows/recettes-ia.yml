@@ -39,8 +39,6 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AI_TEXT_MODEL: gpt-5-mini
-          AI_IMAGE_MODEL: gpt-image-1-mini
-          AI_IMAGE_COUNT: '0'  # 0 photo IA payante, réutiliser les illustrations existantes
         run: python scripts/generate_ai_week.py
       - name: Enregistrer les semaines préparées et le menu du lundi
         run: |
@@ -48,7 +46,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/ai
           if [ -f data/retail/catalog.json ]; then git add data/retail/catalog.json; fi
-          if [ -d images/ia ]; then git add images/ia; fi
           if git diff --cached --quiet; then
             echo "Aucune modification à publier."
             exit 0
