@@ -1,0 +1,42 @@
+name: Mon Panier - Catalogue Lidl Aldi Netto (sans IA)
+
+on:
+  schedule:
+    # Le dimanche : catalogue actualisé avant la génération IA du lundi.
+    - cron: '20 5 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mon-panier-catalogue
+  cancel-in-progress: false
+
+jobs:
+  catalogue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v5
+      - name: Installer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Vérifier le script de synchronisation
+        run: python -m py_compile scripts/sync_store_catalog.py
+      - name: Actualiser les produits depuis Open Food Facts (sans tokens IA)
+        run: python scripts/sync_store_catalog.py
+      - name: Publier le catalogue
+        run: |
+          if [ ! -f data/retail/catalog.json ]; then
+            echo "Aucun nouveau catalogue exploitable ; anciens produits préservés."
+            exit 0
+          fi
+          git config user.name "mon-panier-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/retail/catalog.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Actualise catalogue enseignes sans IA"
+          git push origin HEAD:main
