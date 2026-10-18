@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: 'Regénérer les recettes de cette semaine (appel API facturé)'
+        description: 'Forcer une génération payante même si celle de la semaine existe déjà'
         type: boolean
         default: false
         required: false
@@ -47,7 +47,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AI_TEXT_MODEL: gpt-5-mini
           AI_IMAGE_MODEL: gpt-image-1-mini
-          AI_IMAGE_COUNT: ${{ vars.AI_IMAGE_COUNT || '7' }}
+          AI_IMAGE_COUNT: ${{ vars.AI_IMAGE_COUNT || '0' }}
           FORCE: ${{ github.event.inputs.force || 'false' }}
         run: python scripts/generate_ai_week.py
       - name: Enregistrer les nouveaux menus sur GitHub
