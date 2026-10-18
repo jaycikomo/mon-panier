@@ -1,0 +1,100 @@
+name: Mon Panier - Alertes en cas de panne
+
+# Ne s'exécute qu'après la fin des workflows surveillés.
+# Aucun appel à OpenAI, à un service SMS ni à une API payante.
+on:
+  workflow_run:
+    workflows:
+      - "Mon Panier - Catalogue Lidl Aldi Netto (sans IA)"
+      - "Mon Panier - Menus du lundi depuis sauvegarde mensuelle"
+      - "Mon Panier - Tests gratuits des menus mensuels"
+      - "pages build and deployment"
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: alerte-mon-panier-${{ github.event.workflow_run.name }}
+  cancel-in-progress: false
+
+jobs:
+  alerte:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Signaler un échec ou fermer l'alerte après réparation
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const run = context.payload.workflow_run;
+            if (!run) throw new Error('Aucune exécution de workflow à surveiller.');
+
+            const { owner, repo } = context.repo;
+            const title = '🚨 Mon Panier — workflow en panne : ' + run.name;
+            const all = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', per_page: 100
+            });
+            const issue = all.find(item => !item.pull_request && item.title === title);
+
+            const failures = new Set(['failure', 'timed_out', 'startup_failure']);
+            const detail = [
+              '**Workflow :** ' + run.name,
+              '**Résultat :** ' + run.conclusion,
+              '**Date :** ' + (run.updated_at || run.created_at),
+              '**Lien pour voir les erreurs :** ' + run.html_url,
+              '',
+              'Pour dépanner : ouvrir ce lien, cliquer sur le job rouge,',
+              'puis déplier la première étape en erreur.',
+              '',
+              'Cette alerte ne consomme aucun token OpenAI et aucun SMS payant.'
+            ].join('\n');
+
+            if (failures.has(run.conclusion)) {
+              if (issue) {
+                // Même problème toujours présent : un commentaire, pas 20 tickets.
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: issue.number,
+                  body: '🔴 **Nouvel échec détecté.**\n\n' + detail
+                });
+                core.notice('Alerte existante mise à jour : ' + issue.html_url);
+              } else {
+                // L'affectation au propriétaire active les notifications mobiles
+                // si les alertes « Assignments » sont autorisées dans GitHub Mobile.
+                const created = await github.rest.issues.create({
+                  owner, repo, title,
+                  assignees: [owner],
+                  body: [
+                    '## 🔴 Un workflow Mon Panier a échoué',
+                    '',
+                    'Cette issue est créée automatiquement pour prévenir le',
+                    'propriétaire du dépôt par notification GitHub / e-mail selon',
+                    'les réglages de son compte.',
+                    '',
+                    detail,
+                    '',
+                    'Elle sera fermée automatiquement lorsque ce workflow',
+                    'fonctionnera de nouveau.'
+                  ].join('\n')
+                });
+                core.notice('Nouvelle alerte créée et assignée : ' + created.data.html_url);
+              }
+              return;
+            }
+
+            // Une erreur réparée ne laisse pas une alerte rouge ouverte.
+            if (run.conclusion === 'success' && issue) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issue.number,
+                body: '✅ **Le workflow fonctionne à nouveau.**\n\n'
+                   + 'Dernière exécution réussie : ' + run.html_url
+              });
+              await github.rest.issues.update({
+                owner, repo, issue_number: issue.number, state: 'closed'
+              });
+              core.notice('Alerte refermée automatiquement : ' + issue.html_url);
+            } else {
+              core.info('Rien à signaler : ' + run.name + ' → ' + run.conclusion);
+            }
