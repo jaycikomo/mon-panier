@@ -5,12 +5,6 @@ on:
     # Tous les lundis vers 05:37 UTC (07:37 heure d'été en France).
     - cron: '37 5 * * 1'
   workflow_dispatch:
-    inputs:
-      force:
-        description: 'Forcer une génération payante même si celle de la semaine existe déjà'
-        type: boolean
-        default: false
-        required: false
 
 permissions:
   contents: write
@@ -53,7 +47,6 @@ jobs:
           AI_TEXT_MODEL: gpt-5-mini
           AI_IMAGE_MODEL: gpt-image-1-mini
           AI_IMAGE_COUNT: ${{ vars.AI_IMAGE_COUNT || '0' }}
-          FORCE: ${{ github.event.inputs.force || 'false' }}
         run: python scripts/generate_ai_week.py
       - name: Enregistrer les nouveaux menus sur GitHub
         run: |
