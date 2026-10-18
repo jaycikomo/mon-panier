@@ -111,6 +111,7 @@ async function loadRetailCatalog(){
   if(data&&data.source==='Open Food Facts'&&data.evidence&&typeof data.evidence==='object'){
    retailCatalog=data;
    if(ui.tab==='courses')updateResults();
+   else if(ui.tab==='magasins')render();
   }
  }catch(err){console.warn('Catalogue gratuit indisponible ; liste utilisable sans référence externe',err)}
 }
@@ -358,7 +359,7 @@ function itemCard(x){
  const selectedInfo=stores.find(s=>s.id===selectedStore);
  const nextStore=storesList.find(s=>s.id!==selectedStore);
  const blocked=blockedStores(orig);
- const productRef=!x.isManual&&selectedStore?evidenceFor(orig,selectedStore):null;
+ const productRef=!x.isManual&&selectedStore?evidenceFor(x.eff,selectedStore):null;
  const reference=productRef?`<div class="retail-source">📦 Fiche produit référencée : <a href="https://world.openfoodfacts.org/product/${esc(productRef.ean)}" target="_blank" rel="noopener noreferrer"> ${esc(productRef.name)} ↗</a><small>Open Food Facts · pas une disponibilité garantie</small></div>`:'';
  const storeSelect=storesList.length?`<select class="store-assign" data-assign="${esc(orig)}" aria-label="Magasin pour ${esc(x.name)}">${storesList.map(s=>`<option value="${s.id}" ${s.id===selectedStore?'selected':''}>📍 ${esc(s.name)} · ${esc(s.town)}</option>`).join('')}</select>`:'<span class="store-unavailable">⚠ Aucun magasin sélectionné encore disponible pour cet article.</span>';
  const absenceActions=chosen().length?`<div class="retail-actions">
