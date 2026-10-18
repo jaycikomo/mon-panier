@@ -46,6 +46,20 @@
 .ai-modal-photo{margin-top:14px;width:100%;max-height:230px;overflow:hidden;border-radius:12px;background:#f0f3ec}
 .ai-modal-img{width:100%;height:230px;object-fit:cover;display:block}
 .ai-card-photo{width:100%;height:100%;min-height:105px;object-fit:cover;display:block}.recipe-pics:has(.ai-card-photo){display:block;overflow:hidden}.recipe-pics .ai-card-photo:not(img){display:flex;align-items:center;justify-content:center;font-size:42px}
+
+/* Produits ajoutés : glisser à gauche révèle la suppression, sans effacement accidentel. */
+.manual-swipe{position:relative;overflow:hidden;border-radius:16px;isolation:isolate;touch-action:pan-y}
+.manual-swipe-content{position:relative;z-index:1;transition:transform .22s ease;will-change:transform}
+.manual-swipe.swipe-open .manual-swipe-content{transform:translateX(-104px)}
+.swipe-delete{position:absolute;z-index:0;right:0;top:0;bottom:0;width:104px;background:#c72e34;color:white;border:0;border-radius:0 16px 16px 0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;font:inherit;font-size:21px;cursor:pointer}
+.swipe-delete span{font-size:12px;font-weight:800}
+.swipe-delete:focus-visible,.manual-swipe-more:focus-visible{outline:3px solid #d88989;outline-offset:-4px}
+.swipe-mini-hint{display:block;font-size:11px;color:#7f8e83;margin-top:7px}
+.manual-item-controls{display:flex;align-items:center;align-self:flex-start;justify-content:flex-end;gap:5px}
+.manual-swipe-more{min-height:44px;min-width:44px;background:#f1f5ef;color:#3d634b;border:1px solid #d5e0d2;border-radius:10px;font-weight:800;font-size:23px;cursor:pointer;touch-action:manipulation}
+.manual-desktop-delete{border:1px solid #e3b6b6;background:#fff4f4;color:#a82d35;font-size:12px;font-weight:750;min-height:40px;padding:8px 10px;border-radius:9px;cursor:pointer}
+@media (max-width:700px){.manual-desktop-delete{display:none}.manual-swipe .prod-emoji{width:47px;height:47px}.manual-swipe-content{min-height:94px}}
+@media (min-width:701px){.manual-swipe-more,.swipe-mini-hint{display:none}}
 </style>
 </head>
 <body>
@@ -281,11 +295,29 @@ function aiBanner(){
 function planView(){return `${aiBanner()}${stats()}<div class="spread"><div class="notice">🌱 Menus pour une perte de poids progressive. Les apports sont <b>estimés</b> et peuvent varier selon les marques, les cuissons et les substitutions.</div><button class="btn btn-light" data-action="goto" data-tab="courses">Voir les courses →</button></div>${cardsPlan()}`}
 function personControl(){return `<div class="person-ctrl"><button data-action="minus-person" title="Une personne de moins" aria-label="Réduire le nombre de personnes">−</button><strong>${state.people}</strong><button data-action="plus-person" title="Une personne de plus" aria-label="Augmenter le nombre de personnes">+</button><span class="small muted" style="padding-right:7px">personne(s)</span></div>`}
 function shoppingSection(){const p=progress();return `<section class="share-feature" aria-label="Partager la liste de courses"><div class="share-feature-copy"><span class="share-eyebrow">À ENVOYER À VOTRE FAMILLE</span><h3>📤 Partager la liste de courses</h3><p>Envoie les produits et leurs quantités sur WhatsApp, Messages ou par copier-coller.</p></div><button class="btn share-feature-btn" data-action="share" aria-label="Partager toute la liste de courses">📤 Partager la liste maintenant <span aria-hidden="true">↗</span></button></section><div class="section-head"><div><h2>La liste à cocher</h2><p>Quantités calculées pour 7 jours et ${state.people} personne(s).</p></div>${personControl()}</div><div class="card sheet"><div class="spread"><div><b>${p.done} produit(s) achetés sur ${p.total}</b><div class="muted small">Vos coches sont enregistrées sur ce téléphone.</div></div><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager</button></div><div class="progressbar" role="progressbar" aria-valuenow="${p.done}" aria-valuemax="${p.total}"><span style="width:${p.total?p.done/p.total*100:0}%"></span></div><div class="controls"><input type="search" id="search" placeholder="🔎 Rechercher un produit…" aria-label="Rechercher un produit" value="${esc(ui.search)}"><select id="purchase-filter" aria-label="Filtrer les achats"><option${ui.filter==='Tous'?' selected':''}>Tous</option><option${ui.filter==='À acheter'?' selected':''}>À acheter</option><option${ui.filter==='Achetés'?' selected':''}>Achetés</option></select><select id="store-filter" aria-label="Filtrer par magasin"><option>Tous les magasins</option>${chosen().map(s=>`<option value="${s.id}"${ui.shopFilter===s.id?' selected':''}>${esc(s.name)} — ${esc(s.town)}</option>`).join('')}</select><label class="toggle"><input id="photo-toggle" type="checkbox" ${state.photos?'checked':''}> Photos</label></div><div id="list-results">${listResults()}</div><div class="divider" style="height:1px;background:#ecf1eb;margin-top:14px"></div><div class="section-head"><div><h2 style="font-size:17px">Ajouter un produit</h2><p>Pour les articles qui ne figurent pas dans les recettes.</p></div></div><form id="manual-form" class="manual-add"><input class="field" id="manual-name" required maxlength="70" placeholder="Ex : café, lessive, pain…" aria-label="Nom du produit"><input class="field" id="manual-qty" maxlength="40" placeholder="Quantité (ex : 2 paquets)" aria-label="Quantité"><button class="btn" type="submit">+ Ajouter</button></form><div class="mini-links"><button class="btn btn-outline btn-small" data-action="reset-checked">↺ Réinitialiser les coches</button><button class="btn btn-outline btn-small" data-action="copy-list">📋 Copier le texte</button><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager la liste</button><button class="btn btn-outline btn-small" data-action="share-link">🔗 Lien pour importer</button></div></div><p class="caption" style="margin-top:12px">⚠️ Les photos servent de repères visuels : ce sont des illustrations génériques, pas des photos des emballages vendus par chaque enseigne.</p>`}
-const aisleOrder=['Viandes & poissons','Produits laitiers','Féculents','Fruits & légumes','Épicerie & huiles','Ajouts personnels','Divers'];
+const aisleOrder=['Ajouts personnels','Viandes & poissons','Produits laitiers','Féculents','Fruits & légumes','Épicerie & huiles','Divers'];
+let openSwipeId=null;
 function listResults(){const a=listData().filter(x=>{const chosenStore=assigned(x.id,x.aisle);return (ui.filter==='Tous'||(ui.filter==='À acheter'?!state.checked[x.id]:!!state.checked[x.id]))&&(ui.shopFilter==='Tous les magasins'||ui.shopFilter===chosenStore)&&(!ui.search||x.name.toLowerCase().includes(ui.search.toLowerCase()))});
  if(!a.length)return `<div class="empty">🎉 Aucun article dans ce filtre. Essayez de changer le magasin ou l’état.</div>`;
- return aisleOrder.map(aisle=>{let items=a.filter(x=>x.aisle===aisle);if(!items.length)return '';return `<section class="list-group"><div class="list-group-title"><h3>${esc(aisle)}</h3><span>${items.length} article(s)</span></div><div class="item-list">${items.map(itemCard).join('')}</div></section>`}).join('');}
-function itemCard(x){const orig=x.id,subbed=!!state.subs[orig],info=DATA.ingredients[x.eff],storesList=chosen(),selectedStore=assigned(orig,x.aisle);return `<article class="item-card ${state.checked[orig]?'done':''}" data-product="${esc(orig)}"><input class="product-check" type="checkbox" data-check="${esc(orig)}" aria-label="Acheté : ${esc(x.name)}" ${state.checked[orig]?'checked':''}>${x.isManual?`<span class="prod-emoji">🛍️</span>`:img(x.eff,src(x.eff)?'prod-img':'prod-emoji')}<div class="prod-main"><div class="prod-name">${esc(x.name)}</div><div class="prod-qty">${x.isManual?esc(x.qty||'À acheter'):gram(x.g,x.eff)}</div><div class="prod-actions">${x.isManual?`<button class="linkbtn" data-action="delete-manual" data-id="${esc(orig)}">Supprimer</button>`:`<button class="linkbtn" data-action="toggle-sub" data-id="${orig}">${ui.openSub===orig?'Fermer':subbed?'↺ Changer le remplacement':'⇄ Si indisponible'}</button>`}${subbed?`<span class="store-tag">À la place : ${esc(DATA.ingredients[orig].name)}</span>`:''}</div>${storesList.length?`<div style="margin-top:7px"><select class="store-assign" data-assign="${esc(orig)}" aria-label="Magasin pour ${esc(x.name)}">${storesList.map(s=>`<option value="${s.id}" ${s.id===selectedStore?'selected':''}>📍 ${esc(s.name)} · ${esc(s.town)}</option>`).join('')}</select></div>`:''}${ui.openSub===orig&&!x.isManual?subPanel(orig):''}</div></article>`}
+ return aisleOrder.map(aisle=>{let items=a.filter(x=>x.aisle===aisle);if(!items.length)return '';return `<section class="list-group"><div class="list-group-title"><h3>${esc(aisle)}</h3><span>${aisle==='Ajouts personnels'?'👈 Glissez un article à gauche pour le supprimer':items.length+' article(s)'}</span></div><div class="item-list">${items.map(itemCard).join('')}</div></section>`}).join('');}
+function itemCard(x){
+ const orig=x.id,subbed=!!state.subs[orig],storesList=chosen(),selectedStore=assigned(orig,x.aisle),swipeOpen=openSwipeId===orig;
+ const card=`<article class="item-card ${state.checked[orig]?'done':''} ${x.isManual?'manual-swipe-content':''}" data-product="${esc(orig)}">
+  <input class="product-check" type="checkbox" data-check="${esc(orig)}" aria-label="Acheté : ${esc(x.name)}" ${state.checked[orig]?'checked':''}>
+  ${x.isManual?'<span class="prod-emoji">🛍️</span>':img(x.eff,src(x.eff)?'prod-img':'prod-emoji')}
+  <div class="prod-main"><div class="prod-name">${esc(x.name)}</div><div class="prod-qty">${x.isManual?esc(x.qty||'À acheter'):gram(x.g,x.eff)}</div>
+   ${x.isManual?'<span class="swipe-mini-hint">← Glisser pour supprimer</span>':`<div class="prod-actions"><button class="linkbtn" data-action="toggle-sub" data-id="${esc(orig)}">${ui.openSub===orig?'Fermer':subbed?'↺ Changer le remplacement':'⇄ Si indisponible'}</button>${subbed?`<span class="store-tag">À la place : ${esc(DATA.ingredients[orig].name)}</span>`:''}</div>`}
+   ${storesList.length?`<div style="margin-top:7px"><select class="store-assign" data-assign="${esc(orig)}" aria-label="Magasin pour ${esc(x.name)}">${storesList.map(s=>`<option value="${s.id}" ${s.id===selectedStore?'selected':''}>📍 ${esc(s.name)} · ${esc(s.town)}</option>`).join('')}</select></div>`:''}
+   ${ui.openSub===orig&&!x.isManual?subPanel(orig):''}
+  </div>
+  ${x.isManual?`<div class="manual-item-controls"><button class="manual-swipe-more" type="button" data-action="toggle-manual-swipe" data-id="${esc(orig)}" aria-label="Options de suppression pour ${esc(x.name)}" aria-expanded="${swipeOpen}">⋯</button><button class="manual-desktop-delete" type="button" data-action="delete-manual" data-id="${esc(orig)}">🗑️ Supprimer</button></div>`:''}
+ </article>`;
+ if(!x.isManual)return card;
+ return `<div class="manual-swipe ${swipeOpen?'swipe-open':''}" data-swipe-id="${esc(orig)}">
+  <button class="swipe-delete" type="button" data-action="delete-manual" data-id="${esc(orig)}" aria-label="Supprimer ${esc(x.name)}" aria-hidden="${!swipeOpen}" tabindex="${swipeOpen?0:-1}">🗑️<span>Supprimer</span></button>
+  ${card}
+ </div>`;
+}
 function subPanel(id){const info=DATA.ingredients[id];return `<div class="sub-panel"><b class="small">Pas en rayon ? Remplacez par :</b><div class="sub-options">${info.subs.map(s=>`<button class="subbtn" data-action="choose-sub" data-id="${id}" data-sub="${s}">${esc(DATA.ingredients[s].name)}</button>`).join('')}${state.subs[id]?`<button class="subbtn" data-action="choose-sub" data-id="${id}" data-sub="">↺ Produit d'origine</button>`:''}</div><div class="small muted" style="margin-top:7px">Même quantité indicative. Les valeurs nutritionnelles peuvent changer.</div></div>`}
 function recipeCard(key){const r=DATA.recipes[key],m=mealMacros(key);const ids=r.items.filter(it=>it.id!=='huile').slice(0,2).map(x=>state.subs[x.id]||x.id);return `<button class="card recipe-card" data-action="open-recipe" data-id="${key}"><div class="recipe-pics">${r.photo?mealThumb(key,'ai-card-photo'):ids.map(id=>img(id,src(id)?'prod-img':'prod-emoji')).join('')}</div><div class="recipe-info"><span class="tiny-pill">${r.meal}</span><h3>${esc(r.name)}</h3><p>⏱️ ${esc(r.time)} · 1 portion</p><div class="macros">≈ ${fmt(m.cal)} kcal · ${fmt(m.p)} g protéines</div></div></button>`}
 function recipesView(){let keys=Object.keys(DATA.recipes).filter(k=>ui.recipeFilter==='Tous'||DATA.recipes[k].meal===ui.recipeFilter);return `<div class="section-head"><div><h2>Idées de recettes</h2><p>Les repas de la semaine, réalisables avec votre panier.</p></div></div><div class="store-filters">${['Tous','Petit-déjeuner','Déjeuner','Collation','Dîner'].map(c=>`<button class="chip ${ui.recipeFilter===c?'active':''}" data-action="recipe-filter" data-filter="${c}">${c}</button>`).join('')}</div><div class="recipe-grid">${keys.map(recipeCard).join('')}</div>`}
@@ -337,8 +369,51 @@ async function shareLink(){
  catch(e){if(e.name==='AbortError')return}
  await copyText(url);
 }
+function applySwipeState(){
+ document.querySelectorAll('.manual-swipe').forEach(shell=>{
+  const visible=shell.dataset.swipeId===openSwipeId;
+  shell.classList.toggle('swipe-open',visible);
+  const more=shell.querySelector('.manual-swipe-more');
+  const btn=shell.querySelector('.swipe-delete');
+  if(more)more.setAttribute('aria-expanded',String(visible));
+  if(btn){btn.tabIndex=visible?0:-1;btn.setAttribute('aria-hidden',String(!visible))}
+ });
+}
+let swipeTouch=null;
+document.addEventListener('touchstart',e=>{
+ const shell=e.target.closest('.manual-swipe');
+ if(!shell||e.touches.length!==1||e.target.closest('button,input,select,textarea,a')){swipeTouch=null;return}
+ swipeTouch={id:shell.dataset.swipeId,shell,x:e.touches[0].clientX,y:e.touches[0].clientY,base:openSwipeId===shell.dataset.swipeId?-104:0,dragging:false};
+},{passive:true});
+document.addEventListener('touchmove',e=>{
+ if(!swipeTouch||!e.touches.length)return;
+ const dx=e.touches[0].clientX-swipeTouch.x,dy=e.touches[0].clientY-swipeTouch.y;
+ if(!swipeTouch.dragging){
+  if(Math.abs(dx)<14&&Math.abs(dy)<14)return;
+  if(Math.abs(dy)>=Math.abs(dx)){swipeTouch=null;return}
+  swipeTouch.dragging=true;
+ }
+ const card=swipeTouch.shell.querySelector('.manual-swipe-content');
+ if(card){card.style.transition='none';card.style.transform='translateX('+Math.max(-104,Math.min(0,swipeTouch.base+dx))+'px)'}
+},{passive:true});
+document.addEventListener('touchend',e=>{
+ if(!swipeTouch)return;
+ const touch=swipeTouch;swipeTouch=null;
+ const card=touch.shell.querySelector('.manual-swipe-content');
+ if(card){card.style.removeProperty('transition');card.style.removeProperty('transform')}
+ if(!touch.dragging)return;
+ const delta=e.changedTouches[0].clientX-touch.x;
+ openSwipeId=(touch.base+delta)<-52?touch.id:null;
+ applySwipeState();
+},{passive:true});
+document.addEventListener('touchcancel',()=>{
+ if(swipeTouch){const card=swipeTouch.shell.querySelector('.manual-swipe-content');if(card){card.style.removeProperty('transition');card.style.removeProperty('transform')}}
+ swipeTouch=null;applySwipeState();
+},{passive:true});
+
 let lastFocus=null;
 document.addEventListener('click',e=>{
+ if(openSwipeId&&!e.target.closest('.manual-swipe')){openSwipeId=null;applySwipeState()}
  const t=e.target.closest('[data-action]');if(!t)return;const action=t.dataset.action;
  if(action==='external')return;
  if(action==='toggle-store-card'){if(e.target.closest('a')||e.target.closest('input'))return;changeStore(t.dataset.id);return}
@@ -357,7 +432,8 @@ document.addEventListener('click',e=>{
  if(action==='share-link'){shareLink();return}
  if(action==='restore-archive'){const old=state.archives[Number(t.dataset.index)];if(old&&isValidPlan(old.plan)&&confirm('Remplacer le menu de cette semaine par ce menu archivé ? La liste actuelle sera remise à zéro.')){state.weekPlan=old.plan.map(x=>x.slice());state.checked={};state.manual=[];store();ui.tab='plan';render();notify('Menu archivé réutilisé !')}return}
  if(action==='copy-list'){copyList();return}
- if(action==='delete-manual'){state.manual=state.manual.filter(x=>x.id!==t.dataset.id);delete state.checked[t.dataset.id];store();render();return}
+ if(action==='toggle-manual-swipe'){openSwipeId=openSwipeId===t.dataset.id?null:t.dataset.id;applySwipeState();return}
+ if(action==='delete-manual'){const id=t.dataset.id;if(!state.manual.some(x=>x.id===id))return;state.manual=state.manual.filter(x=>x.id!==id);delete state.checked[id];delete state.assign[id];openSwipeId=null;store();render();notify('Produit supprimé des courses en plus');return}
  if(action==='reset-checked'){if(confirm('Remettre tous les articles en « à acheter » ?')){state.checked={};store();render();notify('Liste réinitialisée')}return}
 });
 document.addEventListener('change',e=>{
