@@ -86,6 +86,44 @@ class MonthlyMenuTests(unittest.TestCase):
                 published = json.loads((root / "latest.json").read_text(encoding="utf-8"))
             self.assertEqual(published["week"], week)
 
+    def test_one_paid_generation_prepares_four_caches_then_free_following_monday(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            latest = root / "latest.json"
+            weeks = root / "weeks"
+            batches = root / "batches"
+            with (patch.object(menus, "LATEST", latest),
+                  patch.object(menus, "WEEKS_DIR", weeks),
+                  patch.object(menus, "BATCH_DIR", batches),
+                  patch.object(menus, "API_KEY", "test-placeholder"),
+                  patch.object(menus, "current_monday", return_value=START),
+                  patch.object(menus, "ingredients", return_value=nutrition_fixture()),
+                  patch.object(menus, "retail_inventory",
+                               return_value=(nutrition_fixture(), {"mode": "test"})),
+                  patch.object(menus, "generate_recipes", return_value="mock-data") as ai,
+                  patch.object(menus, "validate", return_value=bank_fixture()),
+                  patch.object(menus, "rebalance_portions", side_effect=lambda bank, cat: bank)):
+                menus.main()
+            ai.assert_called_once()
+            self.assertEqual(len(list(weeks.glob("*.json"))), 4)
+            self.assertEqual(len(list(batches.glob("*.json"))), 1)
+            self.assertEqual(json.loads(latest.read_text())["week"], START)
+            self.assertEqual(json.loads((batches / (START + ".json")).read_text())
+                             ["recipes_generated"], 32)
+
+            # Semaine 2 : publication via le fichier sauvegardé, sans clé ni IA.
+            with (patch.object(menus, "LATEST", latest),
+                  patch.object(menus, "WEEKS_DIR", weeks),
+                  patch.object(menus, "API_KEY", ""),
+                  patch.object(menus, "current_monday", return_value="2026-10-26"),
+                  patch.object(menus, "request",
+                               side_effect=AssertionError("Aucun nouveau token !"))):
+                menus.main()
+            updated = json.loads(latest.read_text())
+            self.assertEqual(updated["week"], "2026-10-26")
+            self.assertEqual(updated["batch_week_index"], 2)
+            self.assertEqual(updated["batch_weeks"], 4)
+
     def test_existing_current_week_is_idempotent(self):
         with tempfile.TemporaryDirectory() as temp:
             target = Path(temp) / "latest.json"
