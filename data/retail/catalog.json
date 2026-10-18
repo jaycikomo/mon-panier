@@ -2,8 +2,8 @@
   "source": "Sites officiels + Open Food Facts",
   "source_url": "https://world.openfoodfacts.org",
   "license": "ODbL-1.0 pour les seules fiches Open Food Facts",
-  "disclaimer": "Références d'exemples de fiches produits individuelles uniquement ; ni disponibilité, ni stock ni prix en magasin vérifiés. Une absence de fiche ne signifie pas une absence en rayon.",
-  "updated": "2026-10-18T14:02:45.498896+00:00",
+  "disclaimer": "Références observées en ligne (dont offres anciennes). Aucun stock local ni prix actuel garanti.",
+  "updated": "2026-10-18T18:40:24.471801+00:00",
   "official_reviewed": "2026-10-18",
   "priority": [
     "lidl",
