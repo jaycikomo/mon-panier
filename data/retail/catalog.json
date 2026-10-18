@@ -2,7 +2,7 @@
   "source": "Sites officiels + Open Food Facts",
   "source_url": "https://world.openfoodfacts.org",
   "license": "ODbL-1.0 pour les seules fiches Open Food Facts",
-  "disclaimer": "Références observées en ligne (dont offres anciennes). Aucun stock local ni prix actuel garanti.",
+  "disclaimer": "Références d'exemples de fiches produits individuelles uniquement ; ni disponibilité, ni stock ni prix en magasin vérifiés. Une absence de fiche ne signifie pas une absence en rayon.",
   "updated": "2026-10-18T14:02:45.498896+00:00",
   "official_reviewed": "2026-10-18",
   "priority": [
@@ -10,7 +10,7 @@
     "aldi",
     "netto"
   ],
-  "official_count": 23,
+  "official_count": 8,
   "community_count": 0,
   "stores": {
     "lidl": [
@@ -87,36 +87,6 @@
         "reviewed": "2026-10-18"
       },
       {
-        "name": "MILSANI Skyr nature",
-        "ingredients": [
-          "skyr"
-        ],
-        "url": "https://www.aldi.fr/produits/produits-laitiers/lait-oeufs.html",
-        "source": "Site officiel",
-        "kind": "listing",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "PICOTA 30 œufs",
-        "ingredients": [
-          "oeufs"
-        ],
-        "url": "https://www.aldi.fr/produits/produits-laitiers/lait-oeufs.html",
-        "source": "Site officiel",
-        "kind": "listing",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "BIO Huile d’olive bio extra vierge",
-        "ingredients": [
-          "huile"
-        ],
-        "url": "https://www.aldi.fr/offres-et-bons-plans/23-09-2025/huile-d-olive-bio-5017262-1-0.article.html",
-        "source": "Site officiel",
-        "kind": "archived_offer",
-        "reviewed": "2026-10-18"
-      },
-      {
         "name": "ST-CLÉMENT Escalope de dinde",
         "ingredients": [
           "dinde"
@@ -125,130 +95,9 @@
         "source": "Site officiel",
         "kind": "product",
         "reviewed": "2026-10-18"
-      },
-      {
-        "name": "ST-CLÉMENT Émincés de filets de poulet",
-        "ingredients": [
-          "poulet"
-        ],
-        "url": "https://www.aldi.fr/produits/viande-poisson/volaille.html",
-        "source": "Site officiel",
-        "kind": "listing",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "ALL SEASONS Brocolis en fleurettes surgelés",
-        "ingredients": [
-          "brocoli"
-        ],
-        "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
-        "source": "Site officiel",
-        "kind": "listing",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "ALL SEASONS Haricots verts extra fins surgelés",
-        "ingredients": [
-          "haricots"
-        ],
-        "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
-        "source": "Site officiel",
-        "kind": "listing",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "Bananes Bio Fairtrade Cavendish",
-        "ingredients": [
-          "banane"
-        ],
-        "url": "https://www.aldi.fr/fiches-produits/bananes-bio-certifiees-fairtrade-8443.html",
-        "source": "Site officiel",
-        "kind": "archived_offer",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "Pommes de terre à chair ferme",
-        "ingredients": [
-          "pommesdeterre"
-        ],
-        "url": "https://www.aldi.fr/",
-        "source": "Site officiel",
-        "kind": "archived_offer",
-        "reviewed": "2026-10-18"
       }
     ],
-    "netto": [
-      {
-        "name": "Netto Riz basmati 5 kg",
-        "ingredients": [
-          "riz"
-        ],
-        "url": "https://www.netto.fr/gamme-netto",
-        "source": "Site officiel",
-        "kind": "archived_offer",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "Netto Thon albacore au naturel",
-        "ingredients": [
-          "thon"
-        ],
-        "url": "https://www.netto.fr/",
-        "source": "Site officiel",
-        "kind": "listing",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "Netto Œufs frais x20",
-        "ingredients": [
-          "oeufs"
-        ],
-        "url": "https://www.netto.fr/gamme-netto",
-        "source": "Site officiel",
-        "kind": "archived_offer",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "Netto Banane Cavendish",
-        "ingredients": [
-          "banane"
-        ],
-        "url": "https://www.netto.fr/frais",
-        "source": "Site officiel",
-        "kind": "listing",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "Courgettes fraîches (gamme fruits et légumes)",
-        "ingredients": [
-          "courgette"
-        ],
-        "url": "https://www.netto.fr/frais",
-        "source": "Site officiel",
-        "kind": "range",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "Pommes fraîches (gamme fruits et légumes)",
-        "ingredients": [
-          "pomme"
-        ],
-        "url": "https://www.netto.fr/frais",
-        "source": "Site officiel",
-        "kind": "range",
-        "reviewed": "2026-10-18"
-      },
-      {
-        "name": "Concombres frais (gamme fruits et légumes)",
-        "ingredients": [
-          "concombre"
-        ],
-        "url": "https://www.netto.fr/frais",
-        "source": "Site officiel",
-        "kind": "range",
-        "reviewed": "2026-10-18"
-      }
-    ]
+    "netto": []
   },
   "evidence": {
     "skyr": {
@@ -258,15 +107,6 @@
           "url": "https://www.lidl.fr/p/milbona-skyr-nature/p11007752",
           "source": "Site officiel",
           "kind": "product",
-          "reviewed": "2026-10-18"
-        }
-      ],
-      "aldi": [
-        {
-          "name": "MILSANI Skyr nature",
-          "url": "https://www.aldi.fr/produits/produits-laitiers/lait-oeufs.html",
-          "source": "Site officiel",
-          "kind": "listing",
           "reviewed": "2026-10-18"
         }
       ]
@@ -289,15 +129,6 @@
           "kind": "product",
           "reviewed": "2026-10-18"
         }
-      ],
-      "netto": [
-        {
-          "name": "Netto Riz basmati 5 kg",
-          "url": "https://www.netto.fr/gamme-netto",
-          "source": "Site officiel",
-          "kind": "archived_offer",
-          "reviewed": "2026-10-18"
-        }
       ]
     },
     "thon": {
@@ -318,15 +149,6 @@
           "kind": "product",
           "reviewed": "2026-10-18"
         }
-      ],
-      "netto": [
-        {
-          "name": "Netto Thon albacore au naturel",
-          "url": "https://www.netto.fr/",
-          "source": "Site officiel",
-          "kind": "listing",
-          "reviewed": "2026-10-18"
-        }
       ]
     },
     "huile": {
@@ -336,15 +158,6 @@
           "url": "https://www.lidl.fr/p/primadonna-huile-d-olive-vierge-extra/p11208738",
           "source": "Site officiel",
           "kind": "product",
-          "reviewed": "2026-10-18"
-        }
-      ],
-      "aldi": [
-        {
-          "name": "BIO Huile d’olive bio extra vierge",
-          "url": "https://www.aldi.fr/offres-et-bons-plans/23-09-2025/huile-d-olive-bio-5017262-1-0.article.html",
-          "source": "Site officiel",
-          "kind": "archived_offer",
           "reviewed": "2026-10-18"
         }
       ]
@@ -360,26 +173,6 @@
         }
       ]
     },
-    "oeufs": {
-      "aldi": [
-        {
-          "name": "PICOTA 30 œufs",
-          "url": "https://www.aldi.fr/produits/produits-laitiers/lait-oeufs.html",
-          "source": "Site officiel",
-          "kind": "listing",
-          "reviewed": "2026-10-18"
-        }
-      ],
-      "netto": [
-        {
-          "name": "Netto Œufs frais x20",
-          "url": "https://www.netto.fr/gamme-netto",
-          "source": "Site officiel",
-          "kind": "archived_offer",
-          "reviewed": "2026-10-18"
-        }
-      ]
-    },
     "dinde": {
       "aldi": [
         {
@@ -390,118 +183,12 @@
           "reviewed": "2026-10-18"
         }
       ]
-    },
-    "poulet": {
-      "aldi": [
-        {
-          "name": "ST-CLÉMENT Émincés de filets de poulet",
-          "url": "https://www.aldi.fr/produits/viande-poisson/volaille.html",
-          "source": "Site officiel",
-          "kind": "listing",
-          "reviewed": "2026-10-18"
-        }
-      ]
-    },
-    "brocoli": {
-      "aldi": [
-        {
-          "name": "ALL SEASONS Brocolis en fleurettes surgelés",
-          "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
-          "source": "Site officiel",
-          "kind": "listing",
-          "reviewed": "2026-10-18"
-        }
-      ]
-    },
-    "haricots": {
-      "aldi": [
-        {
-          "name": "ALL SEASONS Haricots verts extra fins surgelés",
-          "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
-          "source": "Site officiel",
-          "kind": "listing",
-          "reviewed": "2026-10-18"
-        }
-      ]
-    },
-    "banane": {
-      "aldi": [
-        {
-          "name": "Bananes Bio Fairtrade Cavendish",
-          "url": "https://www.aldi.fr/fiches-produits/bananes-bio-certifiees-fairtrade-8443.html",
-          "source": "Site officiel",
-          "kind": "archived_offer",
-          "reviewed": "2026-10-18"
-        }
-      ],
-      "netto": [
-        {
-          "name": "Netto Banane Cavendish",
-          "url": "https://www.netto.fr/frais",
-          "source": "Site officiel",
-          "kind": "listing",
-          "reviewed": "2026-10-18"
-        }
-      ]
-    },
-    "pommesdeterre": {
-      "aldi": [
-        {
-          "name": "Pommes de terre à chair ferme",
-          "url": "https://www.aldi.fr/",
-          "source": "Site officiel",
-          "kind": "archived_offer",
-          "reviewed": "2026-10-18"
-        }
-      ]
-    },
-    "courgette": {
-      "netto": [
-        {
-          "name": "Courgettes fraîches (gamme fruits et légumes)",
-          "url": "https://www.netto.fr/frais",
-          "source": "Site officiel",
-          "kind": "range",
-          "reviewed": "2026-10-18"
-        }
-      ]
-    },
-    "pomme": {
-      "netto": [
-        {
-          "name": "Pommes fraîches (gamme fruits et légumes)",
-          "url": "https://www.netto.fr/frais",
-          "source": "Site officiel",
-          "kind": "range",
-          "reviewed": "2026-10-18"
-        }
-      ]
-    },
-    "concombre": {
-      "netto": [
-        {
-          "name": "Concombres frais (gamme fruits et légumes)",
-          "url": "https://www.netto.fr/frais",
-          "source": "Site officiel",
-          "kind": "range",
-          "reviewed": "2026-10-18"
-        }
-      ]
     }
   },
   "matched_ingredients": [
     "avoine",
-    "banane",
-    "brocoli",
-    "concombre",
-    "courgette",
     "dinde",
-    "haricots",
     "huile",
-    "oeufs",
-    "pomme",
-    "pommesdeterre",
-    "poulet",
     "riz",
     "skyr",
     "thon"
