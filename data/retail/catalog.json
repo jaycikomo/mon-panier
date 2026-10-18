@@ -1,0 +1,319 @@
+{
+  "source": "Sites officiels + Open Food Facts",
+  "source_url": "https://world.openfoodfacts.org",
+  "license": "ODbL-1.0 pour les seules fiches Open Food Facts",
+  "disclaimer": "Références observées en ligne (dont offres anciennes). Aucun stock local ni prix actuel garanti.",
+  "updated": "2026-10-18T14:00:31.743402+00:00",
+  "official_reviewed": "2026-10-18",
+  "priority": [
+    "lidl",
+    "aldi",
+    "netto"
+  ],
+  "official_count": 14,
+  "community_count": 0,
+  "stores": {
+    "lidl": [
+      {
+        "name": "MILBONA Skyr nature",
+        "ingredients": [
+          "skyr"
+        ],
+        "url": "https://www.lidl.fr/p/milbona-skyr-nature/p11007752",
+        "source": "Site officiel",
+        "kind": "product",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "GOLDENSUN Riz basmati",
+        "ingredients": [
+          "riz"
+        ],
+        "url": "https://www.lidl.fr/p/goldensun-riz-basmati/p11134960",
+        "source": "Site officiel",
+        "kind": "product",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Petit Navire Thon au naturel (4 boîtes)",
+        "ingredients": [
+          "thon"
+        ],
+        "url": "https://www.lidl.fr/p/petit-navire-thon/p11502429",
+        "source": "Site officiel",
+        "kind": "product",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "PRIMADONNA Huile d’olive vierge extra",
+        "ingredients": [
+          "huile"
+        ],
+        "url": "https://www.lidl.fr/p/primadonna-huile-d-olive-vierge-extra/p11208738",
+        "source": "Site officiel",
+        "kind": "product",
+        "reviewed": "2026-10-18"
+      }
+    ],
+    "aldi": [
+      {
+        "name": "GOLDEN BRIDGE Flocons d’avoine",
+        "ingredients": [
+          "avoine"
+        ],
+        "url": "https://www.aldi.fr/fiches-produits/flocons-davoine-1869.html",
+        "source": "Site officiel",
+        "kind": "product",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "GOLDEN SEAFOOD Thon au naturel",
+        "ingredients": [
+          "thon"
+        ],
+        "url": "https://www.aldi.fr/fiches-produits/thon-au-naturel-5016920.html",
+        "source": "Site officiel",
+        "kind": "product",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "BON-RI Riz basmati",
+        "ingredients": [
+          "riz"
+        ],
+        "url": "https://www.aldi.fr/fiches-produits/riz-basmati-5017302.html",
+        "source": "Site officiel",
+        "kind": "product",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "MILSANI Skyr nature",
+        "ingredients": [
+          "skyr"
+        ],
+        "url": "https://www.aldi.fr/produits/produits-laitiers/lait-oeufs.html",
+        "source": "Site officiel",
+        "kind": "listing",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "PICOTA 30 œufs",
+        "ingredients": [
+          "oeufs"
+        ],
+        "url": "https://www.aldi.fr/produits/produits-laitiers/lait-oeufs.html",
+        "source": "Site officiel",
+        "kind": "listing",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "BIO Huile d’olive bio extra vierge",
+        "ingredients": [
+          "huile"
+        ],
+        "url": "https://www.aldi.fr/offres-et-bons-plans/23-09-2025/huile-d-olive-bio-5017262-1-0.article.html",
+        "source": "Site officiel",
+        "kind": "archived_offer",
+        "reviewed": "2026-10-18"
+      }
+    ],
+    "netto": [
+      {
+        "name": "Netto Riz basmati 5 kg",
+        "ingredients": [
+          "riz"
+        ],
+        "url": "https://www.netto.fr/gamme-netto",
+        "source": "Site officiel",
+        "kind": "archived_offer",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Netto Thon albacore au naturel",
+        "ingredients": [
+          "thon"
+        ],
+        "url": "https://www.netto.fr/",
+        "source": "Site officiel",
+        "kind": "listing",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Netto Œufs frais x20",
+        "ingredients": [
+          "oeufs"
+        ],
+        "url": "https://www.netto.fr/gamme-netto",
+        "source": "Site officiel",
+        "kind": "archived_offer",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Netto Banane Cavendish",
+        "ingredients": [
+          "banane"
+        ],
+        "url": "https://www.netto.fr/frais",
+        "source": "Site officiel",
+        "kind": "listing",
+        "reviewed": "2026-10-18"
+      }
+    ]
+  },
+  "evidence": {
+    "skyr": {
+      "lidl": [
+        {
+          "name": "MILBONA Skyr nature",
+          "url": "https://www.lidl.fr/p/milbona-skyr-nature/p11007752",
+          "source": "Site officiel",
+          "kind": "product",
+          "reviewed": "2026-10-18"
+        }
+      ],
+      "aldi": [
+        {
+          "name": "MILSANI Skyr nature",
+          "url": "https://www.aldi.fr/produits/produits-laitiers/lait-oeufs.html",
+          "source": "Site officiel",
+          "kind": "listing",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "riz": {
+      "lidl": [
+        {
+          "name": "GOLDENSUN Riz basmati",
+          "url": "https://www.lidl.fr/p/goldensun-riz-basmati/p11134960",
+          "source": "Site officiel",
+          "kind": "product",
+          "reviewed": "2026-10-18"
+        }
+      ],
+      "aldi": [
+        {
+          "name": "BON-RI Riz basmati",
+          "url": "https://www.aldi.fr/fiches-produits/riz-basmati-5017302.html",
+          "source": "Site officiel",
+          "kind": "product",
+          "reviewed": "2026-10-18"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Netto Riz basmati 5 kg",
+          "url": "https://www.netto.fr/gamme-netto",
+          "source": "Site officiel",
+          "kind": "archived_offer",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "thon": {
+      "lidl": [
+        {
+          "name": "Petit Navire Thon au naturel (4 boîtes)",
+          "url": "https://www.lidl.fr/p/petit-navire-thon/p11502429",
+          "source": "Site officiel",
+          "kind": "product",
+          "reviewed": "2026-10-18"
+        }
+      ],
+      "aldi": [
+        {
+          "name": "GOLDEN SEAFOOD Thon au naturel",
+          "url": "https://www.aldi.fr/fiches-produits/thon-au-naturel-5016920.html",
+          "source": "Site officiel",
+          "kind": "product",
+          "reviewed": "2026-10-18"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Netto Thon albacore au naturel",
+          "url": "https://www.netto.fr/",
+          "source": "Site officiel",
+          "kind": "listing",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "huile": {
+      "lidl": [
+        {
+          "name": "PRIMADONNA Huile d’olive vierge extra",
+          "url": "https://www.lidl.fr/p/primadonna-huile-d-olive-vierge-extra/p11208738",
+          "source": "Site officiel",
+          "kind": "product",
+          "reviewed": "2026-10-18"
+        }
+      ],
+      "aldi": [
+        {
+          "name": "BIO Huile d’olive bio extra vierge",
+          "url": "https://www.aldi.fr/offres-et-bons-plans/23-09-2025/huile-d-olive-bio-5017262-1-0.article.html",
+          "source": "Site officiel",
+          "kind": "archived_offer",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "avoine": {
+      "aldi": [
+        {
+          "name": "GOLDEN BRIDGE Flocons d’avoine",
+          "url": "https://www.aldi.fr/fiches-produits/flocons-davoine-1869.html",
+          "source": "Site officiel",
+          "kind": "product",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "oeufs": {
+      "aldi": [
+        {
+          "name": "PICOTA 30 œufs",
+          "url": "https://www.aldi.fr/produits/produits-laitiers/lait-oeufs.html",
+          "source": "Site officiel",
+          "kind": "listing",
+          "reviewed": "2026-10-18"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Netto Œufs frais x20",
+          "url": "https://www.netto.fr/gamme-netto",
+          "source": "Site officiel",
+          "kind": "archived_offer",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "banane": {
+      "netto": [
+        {
+          "name": "Netto Banane Cavendish",
+          "url": "https://www.netto.fr/frais",
+          "source": "Site officiel",
+          "kind": "listing",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    }
+  },
+  "matched_ingredients": [
+    "avoine",
+    "banane",
+    "huile",
+    "oeufs",
+    "riz",
+    "skyr",
+    "thon"
+  ],
+  "errors": [
+    "lidl: HTTP Error 503: Service Temporarily Unavailable",
+    "aldi: HTTP Error 503: Service Temporarily Unavailable",
+    "netto: HTTP Error 503: Service Temporarily Unavailable"
+  ]
+}
