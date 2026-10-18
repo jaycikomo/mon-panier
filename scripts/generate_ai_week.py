@@ -65,8 +65,16 @@ def generate_recipes(catalogue, week):
     month = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][int(week[5:7])-1]
     instructions = (
         "Tu es cuisinier et diététicien pédagogique. Conçois EXACTEMENT 20 recettes "
-        "originales en français pour une famille qui fait ses courses chez Lidl, ALDI, Netto "
-        "ou au marché de La Bouilladisse. Chaque recette doit contenir un titre, 2-4 phrases "
+        "originales en français pour une famille qui fait principalement ses courses "
+        "en priorité chez Lidl (La Destrousse), puis Aldi (La Bouilladisse), puis "
+        "Intermarché (La Destrousse). Privilégie les produits de base bon marché "
+        "et les ingrédients généralement référencés dans ces trois enseignes : "
+        "œufs, skyr, viande, poisson courant, conserves, féculents et fruits/légumes de saison. "
+        "Évite les produits rares, spécialisés ou spécifiques à une marque et propose "
+        "des préparations réalisables avec une offre de supermarché standard. "
+        "Tu ne connais PAS les stocks ni les promotions en temps réel : ne les invente pas. "
+        "Les autres magasins et marchés sont des solutions de repli. "
+        "Chaque recette doit contenir un titre, 2-4 phrases "
         "de préparation concrètes, un temps (ex: '20 min'), et des ingrédients pesés CRUS "
         "en grammes pour UNE personne. Les recettes de la semaine doivent être nouvelles et "
         "différentes des recettes précédentes. Pas de suppléments, médicaments ni d'allégations médicales. "
