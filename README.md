@@ -37,12 +37,12 @@
 - Estimer les **calories et macronutriments** : protéines, glucides et lipides.
 - Construire la liste de courses correspondant au menu et au nombre de personnes.
 - Cocher les produits achetés, ajouter des articles personnels, chercher un produit et partager une liste.
-- Choisir des magasins et signaler qu'un article n'y a pas été trouvé.
+- Choisir librement le magasin attribué à chaque article, sans signalement de disponibilité.
 - Conserver une copie des semaines précédentes dans le navigateur.
 
 **Objectifs indicatifs du programme :** environ **1 915 kcal, 130 g de protéines, 180 g de glucides et 75 g de lipides par adulte et par jour**. Ce sont des estimations de planification, pas un diagnostic ou un conseil médical personnalisé.
 
-**Important :** Mon Panier n'est pas une application qui consulte les stocks réels des magasins. Elle connaît des *références de produits* et permet de noter les indisponibilités rencontrées pendant les courses.
+**Important :** Mon Panier ne consulte pas les stocks réels des magasins. Il propose des *références de produits indicatives* ; le magasin choisi pour un article est une préférence personnelle, pas une preuve de disponibilité.
 
 ## 2 — Comment s'en servir au quotidien
 
@@ -64,19 +64,19 @@ L'application contient cinq rubriques :
 | **🍽️ Recettes** | Consulter les plats et leurs préparations. |
 | **📍 Mes commerces** | Sélectionner ou retirer des magasins, marchés et commerces de proximité. |
 
-### Quand un produit manque en rayon
+### Choisir le magasin pour un produit
 
-La priorité de courses est **Lidl La Destrousse → Aldi La Bouilladisse → Netto La Destrousse**.
+La liste de courses propose par défaut un ordre de priorité : **Lidl La Destrousse → Aldi La Bouilladisse → Netto La Destrousse**.
 
-**Exemple :** du riz est attribué à Lidl.
+**Exemple :** le riz apparaît avec le menu **« Magasin choisi »**. Tu peux :
 
-1. Tu ne le trouves pas chez Lidl : clique sur **« Je ne l’ai pas trouvé ici → Essayer Aldi »**.
-2. L'application propose alors **Aldi La Bouilladisse**.
-3. S'il manque aussi chez Aldi, elle propose **Netto La Destrousse**.
-4. Si tu as sélectionné d'autres enseignes (par exemple Intermarché), elles peuvent servir de repli.
-5. Le bouton **« Annuler et recommencer »** efface tes signalements pour cet article.
+1. Garder Lidl si tu souhaites y acheter le riz.
+2. Choisir directement **Aldi La Bouilladisse**, **Netto La Destrousse** ou un autre commerce sélectionné.
+3. Cocher l'article lorsque tu l'as **réellement acheté**.
 
-Ce mécanisme mémorise **ce que tu as constaté en rayon sur cet appareil**. Les autres magasins sont seulement **des endroits où chercher ensuite**, sans garantie de stock. La liste indique clairement « Magasin où chercher ». Une fiche produit en ligne n'est pas une preuve de disponibilité locale.
+Il n'y a **plus de bouton « Pas disponible ici »**, ni de magasin exclu automatiquement. Les anciens signalements sont ignorés puis supprimés lors du prochain chargement. Tes coches et tes magasins préférés restent conservés.
+
+**Une fiche produit en ligne n'est pas une preuve de stock en rayon**. L'application affiche uniquement des exemples de références vérifiables lorsque des fiches directes existent.
 
 ### Autres possibilités pratiques
 
@@ -209,7 +209,7 @@ Le catalogue contient notamment : le nom d'un produit, l'enseigne, l'ingrédient
 
 Une fiche vue sur un site ne signifie **pas** que le produit est actuellement en rayon à La Destrousse ou La Bouilladisse. **Aucune fiche précise enregistrée pour Netto ne signifie pas que Netto ne vend pas l'article** : l'information est simplement incomplète. Les promotions anciennes et leurs prix ne doivent pas être présentés comme des offres actuelles.
 
-C'est précisément pour cela que Mon Panier te permet de signaler **« Je ne l'ai pas trouvé ici »**, puis de chercher dans une autre enseigne.
+Dans Mon Panier, tu peux maintenant **changer simplement de magasin dans la liste de courses**. Aucune enseigne n'est exclue ni présentée comme disposant du stock réel.
 
 ### Quand cette mise à jour s'exécute-t-elle ?
 
@@ -523,7 +523,7 @@ Tu peux suivre les dépenses sur https://platform.openai.com/usage et définir t
 | **Le catalogue ne récupère rien.** | Vérifier ses logs. Open Food Facts peut répondre **503** ; le programme conserve les références officielles existantes. |
 | **Un workflow est rouge.** | Ouvrir l'étape en échec. Il peut s'agir de réseau, de données invalides, d'un secret manquant ou d'un problème de publication Git. |
 | **La génération IA échoue.** | Vérifier la clé API, les crédits, la réponse du modèle et les logs ; une génération échouée peut avoir consommé des tokens. |
-| **Un produit est affiché mais n'est pas en rayon.** | Le catalogue documente une référence, **pas le stock actuel** ; utiliser « Pas disponible ici ». |
+| **Un produit est affiché mais n'est pas en rayon.** | Le catalogue documente une référence, **pas le stock actuel**. Choisir manuellement un autre magasin dans « Magasin choisi ». |
 | **Mes coches ont disparu sur un autre téléphone.** | Normal : elles sont conservées localement, pas synchronisées entre appareils. |
 | **Mes coches se sont remises à zéro lundi.** | C'est le changement de semaine prévu par l'application. |
 | **GitHub lance un workflow en retard.** | Les planifications GitHub Actions ne garantissent pas une exécution à la minute exacte. |
