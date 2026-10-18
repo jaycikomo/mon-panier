@@ -528,6 +528,29 @@ Tu peux suivre les dépenses sur https://platform.openai.com/usage et définir t
 | **Mes coches se sont remises à zéro lundi.** | C'est le changement de semaine prévu par l'application. |
 | **GitHub lance un workflow en retard.** | Les planifications GitHub Actions ne garantissent pas une exécution à la minute exacte. |
 
+### 🔔 Notifications automatiques en cas de panne
+
+Le fichier [`.github/workflows/alertes.yml`](.github/workflows/alertes.yml) surveille les workflows du **catalogue**, des **menus du lundi**, des **tests** et du **déploiement GitHub Pages**.
+
+Il est gratuit, sans clé supplémentaire et sans appel à OpenAI :
+
+1. Un workflow se termine avec une erreur.
+2. GitHub crée une **Issue** (« ticket ») avec le nom du workflow, la date, le résultat et le lien vers les logs.
+3. Cette Issue est **assignée au propriétaire du dépôt** (`jaycikomo`), pour pouvoir déclencher une notification GitHub Mobile si l'application est configurée.
+4. Si le même problème revient, l'Issue existante est commentée plutôt que dupliquée.
+5. Lorsque ce workflow réussit de nouveau, l'Issue est automatiquement fermée.
+
+**Pour recevoir une notification sur téléphone :**
+
+1. Installer **GitHub Mobile** (iPhone ou Android) et se connecter au compte `jaycikomo`.
+2. Dans l'application : **Profile → Settings → Notifications** (ou **Configure Notifications** selon l'appareil).
+3. Activer les notifications push **Assignments / Affectations** et autoriser les notifications GitHub dans les réglages du téléphone.
+4. Au besoin, régler **Watch** du dépôt pour suivre les événements pertinents.
+
+**Pour recevoir aussi un e-mail :** ouvrir [les paramètres de notifications GitHub](https://github.com/settings/notifications), régler **Actions → Email**, et sélectionner **Only notify for failed workflows** si l'option est proposée. GitHub envoie alors les e-mails des exécutions concernées selon ses règles d'abonnement ; les alertes par Issue dépendent des préférences de notification du compte.
+
+**Limites :** les annulations ordinaires (`cancelled`) sont ignorées pour éviter les faux signaux, et cette surveillance ne peut pas avertir si GitHub Actions lui-même est totalement indisponible, ni garantir une notification si les réglages du téléphone la bloquent. Il n'y a **pas de SMS direct** : cela exigerait un prestataire et un numéro de téléphone, potentiellement avec des frais.
+
 ### Est-ce qu'il faut cliquer sur « Run workflow » ?
 
 **En fonctionnement normal : non.** Les workflows planifiés démarrent automatiquement.
