@@ -313,7 +313,7 @@ function assigned(id,aisle){
 function evidenceFor(id,storeId){
  const tag=storeId==='aldi'?'aldi':storeId==='netto'?'netto':storeId&&storeId.startsWith('lidl-')?'lidl':'';
  const matches=tag&&retailCatalog?.evidence?.[id]?.[tag];
- return Array.isArray(matches)?matches.find(x=>/^\\d{8,14}$/.test(String(x.ean))):null;
+ return Array.isArray(matches)?matches.find(x=>/^\d{8,14}$/.test(String(x.ean))):null;
 }
 function progress(){const a=listData();return {done:a.filter(x=>!!state.checked[x.id]).length,total:a.length}}
 function notify(msg){document.querySelector('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
