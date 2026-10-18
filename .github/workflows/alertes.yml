@@ -8,6 +8,7 @@ on:
       - "Mon Panier - Catalogue Lidl Aldi Netto (sans IA)"
       - "Mon Panier - Menus du lundi depuis sauvegarde mensuelle"
       - "Mon Panier - Tests gratuits des menus mensuels"
+      - "Mon Panier - TEST notification volontaire"
       - "pages build and deployment"
     types: [completed]
 
