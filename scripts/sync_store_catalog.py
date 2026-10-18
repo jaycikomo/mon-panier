@@ -81,7 +81,7 @@ def fetch(store):
     params = urllib.parse.urlencode({
         "stores_tags": store,
         "countries_tags": "en:france",
-        "page_size": 250,
+        "page_size": 500,
         "fields": "code,product_name,product_name_fr,brands,stores_tags,countries_tags",
     })
     url = SOURCE + "/api/v2/search?" + params
@@ -113,7 +113,7 @@ def main():
             for p in raw:
                 code = str(p.get("code", ""))
                 name = str(p.get("product_name_fr") or p.get("product_name") or "").strip()
-                if not re.fullmatch(r"\\d{8,14}", code) or len(name) < 3 or code in used_codes:
+                if not re.fullmatch(r"\d{8,14}", code) or len(name) < 3 or code in used_codes:
                     continue
                 hits = [key for key, names in ALIASES.items() if is_match(name, names)]
                 if not hits:
