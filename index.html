@@ -63,15 +63,10 @@
 .store-priority-note{font-size:12px;line-height:1.5;color:#345540;background:#edf6ed;border:1px solid #d5e7d5;border-radius:12px;padding:11px 13px;margin:10px 0 14px}
 .store-priority-note span{color:#697a6c}
 
-.retail-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.store-missing-btn,.store-reset-btn{min-height:40px;padding:9px 12px;border-radius:10px;background:#fff3ea;border:1px solid #f2d2b1;color:#824923;font-size:12px;font-weight:750;cursor:pointer;white-space:normal;text-align:left}
-.store-reset-btn{background:#f0f5ec;color:#45634b;border-color:#d2dfcd}
-.store-unavailable{font-size:12px;color:#b04b3b;display:block;line-height:1.5}
 .store-choice-wrap{display:grid;gap:4px;justify-items:start;margin-top:9px}
 .store-choice-label{display:block;font-size:12px;font-weight:760;color:#405d47}
 .store-choice-wrap .store-assign{display:block;font-size:13px;max-width:100%;padding:8px 10px;min-height:37px;border:1px solid #cddbcf;background:#f5faf4;color:#264f34}
 .store-stock-hint{font-size:11px;color:#718079;line-height:1.45}
-.store-missing-history{font-size:11px;color:#765e43;line-height:1.5;width:100%}
 .retail-source{font-size:10px;margin-top:7px;color:#637368;line-height:1.4}
 .retail-source a{color:#326648;text-decoration:underline;font-weight:730}
 .retail-source small{display:block;font-size:10px;color:#849084}
@@ -102,7 +97,7 @@ const stores=[
 {id:'alimentation-bouilladisse',name:'Alimentation de La Bouilladisse',town:'La Bouilladisse',type:'Supérette',emoji:'🏪',address:'1 avenue de Bigarron, 13720 La Bouilladisse'},
 {id:'carrefour-peypin',name:'Carrefour Express',town:'Peypin',type:'Supérette',emoji:'🏪',address:'284 avenue de la République, 13124 Peypin'}
 ];
-const defaults={ready:false,people:2,stores:['lidl-destrousse','aldi','netto'],checked:{},subs:{},assign:{},unavailable:{},manual:[],photos:true};
+const defaults={ready:false,people:2,stores:['lidl-destrousse','aldi','netto'],checked:{},subs:{},assign:{},manual:[],photos:true};
 const STORAGE='mon-panier-v1';
 const AI_LATEST_URL='https://raw.githubusercontent.com/jaycikomo/mon-panier/main/data/ai/latest.json';
 const RETAIL_CATALOG_URL='https://raw.githubusercontent.com/jaycikomo/mon-panier/main/data/retail/catalog.json';
@@ -241,7 +236,7 @@ function rollover(){
    state.archives=[saved,...state.archives.filter(x=>x.key!==saved.key)].slice(0,52);
  }
  state.weekKey=today;state.weekPlan=weeklyPlan(today);
- state.checked={};state.manual=[];state.unavailable={};DATA.plan=state.weekPlan;
+ state.checked={};state.manual=[];DATA.plan=state.weekPlan;
  store();return true;
 }
 
@@ -277,7 +272,8 @@ function load(){
  state.checked=state.checked&&typeof state.checked==='object'?state.checked:{};
  state.subs=state.subs&&typeof state.subs==='object'?state.subs:{};
  state.assign=state.assign&&typeof state.assign==='object'?state.assign:{};
- state.unavailable=state.unavailable&&typeof state.unavailable==='object'&&!Array.isArray(state.unavailable)?state.unavailable:{};
+ // Neutraliser les anciens signalements sauvegardés sans effacer les choix de magasins.
+ delete state.unavailable;
  state.manual=Array.isArray(state.manual)?state.manual:[];
  rollover();store();
 }
@@ -310,16 +306,8 @@ function chosen(){
   return (ia<0?100:ia)-(ib<0?100:ib);
  });
 }
-function blockedStores(id){
- const x=state.unavailable&&state.unavailable[id];
- return Array.isArray(x)?x.filter(v=>typeof v==='string'):[];
-}
-function eligibleStores(id){
- const blocked=blockedStores(id);
- return chosen().filter(s=>!blocked.includes(s.id));
-}
 function assigned(id,aisle){
- const storesReady=eligibleStores(id);
+ const storesReady=chosen();
  if(state.assign[id]&&storesReady.some(s=>s.id===state.assign[id]))return state.assign[id];
  return storesReady.length?storesReady[0].id:'';
 }
@@ -372,26 +360,17 @@ function aiBanner(){
 }
 function planView(){return `${aiBanner()}${stats()}<div class="spread"><div class="notice">🌱 Menus pour une perte de poids progressive. Les apports sont <b>estimés</b> et peuvent varier selon les marques, les cuissons et les substitutions.</div><button class="btn btn-light" data-action="goto" data-tab="courses">Voir les courses →</button></div>${cardsPlan()}`}
 function personControl(){return `<div class="person-ctrl"><button data-action="minus-person" title="Une personne de moins" aria-label="Réduire le nombre de personnes">−</button><strong>${state.people}</strong><button data-action="plus-person" title="Une personne de plus" aria-label="Augmenter le nombre de personnes">+</button><span class="small muted" style="padding-right:7px">personne(s)</span></div>`}
-function shoppingSection(){const p=progress();return `<section class="share-feature" aria-label="Partager la liste de courses"><div class="share-feature-copy"><span class="share-eyebrow">À ENVOYER À VOTRE FAMILLE</span><h3>📤 Partager la liste de courses</h3><p>Envoie les produits et leurs quantités sur WhatsApp, Messages ou par copier-coller.</p></div><button class="btn share-feature-btn" data-action="share" aria-label="Partager toute la liste de courses">📤 Partager la liste maintenant <span aria-hidden="true">↗</span></button></section><div class="section-head"><div><h2>La liste à cocher</h2><p>Quantités estimées d’après les recettes pour 7 jours et ${state.people} personne(s), pas les tailles de paquets. Coche un article uniquement après l’avoir acheté.</p></div>${personControl()}</div><div class="card sheet"><div class="spread"><div><b>${p.done} produit(s) achetés sur ${p.total}</b><div class="muted small">Vos coches sont enregistrées sur ce téléphone.</div></div><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager</button></div><div class="progressbar" role="progressbar" aria-valuenow="${p.done}" aria-valuemax="${p.total}"><span style="width:${p.total?p.done/p.total*100:0}%"></span></div><div class="store-priority-note">🏪 <b>Comment utiliser les magasins ?</b> Cherche d’abord ton produit chez Lidl La Destrousse, puis Aldi La Bouilladisse, puis Netto La Destrousse. <b>Si tu ne le trouves pas toi-même en rayon,</b> touche « Je ne l’ai pas trouvé ici » : la liste proposera un autre magasin. <span>⚠ Nous ne connaissons ni les stocks ni les prix locaux. Même un lien vers une fiche produit ne garantit rien.</span></div><div class="controls"><input type="search" id="search" placeholder="🔎 Rechercher un produit…" aria-label="Rechercher un produit" value="${esc(ui.search)}"><select id="purchase-filter" aria-label="Filtrer les achats"><option${ui.filter==='Tous'?' selected':''}>Tous</option><option${ui.filter==='À acheter'?' selected':''}>À acheter</option><option${ui.filter==='Achetés'?' selected':''}>Achetés</option></select><select id="store-filter" aria-label="Filtrer par magasin"><option>Tous les magasins</option>${chosen().map(s=>`<option value="${s.id}"${ui.shopFilter===s.id?' selected':''}>${esc(s.name)} — ${esc(s.town)}</option>`).join('')}</select><label class="toggle"><input id="photo-toggle" type="checkbox" ${state.photos?'checked':''}> Photos</label></div><div id="list-results">${listResults()}</div><div class="divider" style="height:1px;background:#ecf1eb;margin-top:14px"></div><div class="section-head"><div><h2 style="font-size:17px">Ajouter un produit</h2><p>Pour les articles qui ne figurent pas dans les recettes.</p></div></div><form id="manual-form" class="manual-add"><input class="field" id="manual-name" required maxlength="70" placeholder="Ex : café, lessive, pain…" aria-label="Nom du produit"><input class="field" id="manual-qty" maxlength="40" placeholder="Quantité (ex : 2 paquets)" aria-label="Quantité"><button class="btn" type="submit">+ Ajouter</button></form><div class="mini-links"><button class="btn btn-outline btn-small" data-action="reset-checked">↺ Réinitialiser les coches</button><button class="btn btn-outline btn-small" data-action="copy-list">📋 Copier le texte</button><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager la liste</button><button class="btn btn-outline btn-small" data-action="share-link">🔗 Lien pour importer</button></div></div><p class="caption" style="margin-top:12px">⚠️ Les photos servent de repères visuels : ce sont des illustrations génériques, pas des photos des emballages vendus par chaque enseigne.</p>`}
+function shoppingSection(){const p=progress();return `<section class="share-feature" aria-label="Partager la liste de courses"><div class="share-feature-copy"><span class="share-eyebrow">À ENVOYER À VOTRE FAMILLE</span><h3>📤 Partager la liste de courses</h3><p>Envoie les produits et leurs quantités sur WhatsApp, Messages ou par copier-coller.</p></div><button class="btn share-feature-btn" data-action="share" aria-label="Partager toute la liste de courses">📤 Partager la liste maintenant <span aria-hidden="true">↗</span></button></section><div class="section-head"><div><h2>La liste à cocher</h2><p>Quantités estimées d’après les recettes pour 7 jours et ${state.people} personne(s), pas les tailles de paquets. Coche un article uniquement après l’avoir acheté.</p></div>${personControl()}</div><div class="card sheet"><div class="spread"><div><b>${p.done} produit(s) achetés sur ${p.total}</b><div class="muted small">Vos coches sont enregistrées sur ce téléphone.</div></div><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager</button></div><div class="progressbar" role="progressbar" aria-valuenow="${p.done}" aria-valuemax="${p.total}"><span style="width:${p.total?p.done/p.total*100:0}%"></span></div><div class="store-priority-note">🏪 <b>Choisis le magasin de chaque article</b> directement dans le menu « Magasin choisi ». Par défaut : Lidl La Destrousse, puis Aldi La Bouilladisse, puis Netto La Destrousse. <span>⚠ Les stocks et les prix locaux ne sont pas vérifiés.</span></div><div class="controls"><input type="search" id="search" placeholder="🔎 Rechercher un produit…" aria-label="Rechercher un produit" value="${esc(ui.search)}"><select id="purchase-filter" aria-label="Filtrer les achats"><option${ui.filter==='Tous'?' selected':''}>Tous</option><option${ui.filter==='À acheter'?' selected':''}>À acheter</option><option${ui.filter==='Achetés'?' selected':''}>Achetés</option></select><select id="store-filter" aria-label="Filtrer par magasin"><option>Tous les magasins</option>${chosen().map(s=>`<option value="${s.id}"${ui.shopFilter===s.id?' selected':''}>${esc(s.name)} — ${esc(s.town)}</option>`).join('')}</select><label class="toggle"><input id="photo-toggle" type="checkbox" ${state.photos?'checked':''}> Photos</label></div><div id="list-results">${listResults()}</div><div class="divider" style="height:1px;background:#ecf1eb;margin-top:14px"></div><div class="section-head"><div><h2 style="font-size:17px">Ajouter un produit</h2><p>Pour les articles qui ne figurent pas dans les recettes.</p></div></div><form id="manual-form" class="manual-add"><input class="field" id="manual-name" required maxlength="70" placeholder="Ex : café, lessive, pain…" aria-label="Nom du produit"><input class="field" id="manual-qty" maxlength="40" placeholder="Quantité (ex : 2 paquets)" aria-label="Quantité"><button class="btn" type="submit">+ Ajouter</button></form><div class="mini-links"><button class="btn btn-outline btn-small" data-action="reset-checked">↺ Réinitialiser les coches</button><button class="btn btn-outline btn-small" data-action="copy-list">📋 Copier le texte</button><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager la liste</button><button class="btn btn-outline btn-small" data-action="share-link">🔗 Lien pour importer</button></div></div><p class="caption" style="margin-top:12px">⚠️ Les photos servent de repères visuels : ce sont des illustrations génériques, pas des photos des emballages vendus par chaque enseigne.</p>`}
 const aisleOrder=['Ajouts personnels','Viandes & poissons','Produits laitiers','Féculents','Fruits & légumes','Épicerie & huiles','Divers'];
 let openSwipeId=null;
 function listResults(){const a=listData().filter(x=>{const chosenStore=assigned(x.id,x.aisle);return (ui.filter==='Tous'||(ui.filter==='À acheter'?!state.checked[x.id]:!!state.checked[x.id]))&&(ui.shopFilter==='Tous les magasins'||ui.shopFilter===chosenStore)&&(!ui.search||x.name.toLowerCase().includes(ui.search.toLowerCase()))});
  if(!a.length)return `<div class="empty">🎉 Aucun article dans ce filtre. Essayez de changer le magasin ou l’état.</div>`;
  return aisleOrder.map(aisle=>{let items=a.filter(x=>x.aisle===aisle);if(!items.length)return '';return `<section class="list-group"><div class="list-group-title"><h3>${esc(aisle)}</h3><span>${aisle==='Ajouts personnels'?'👈 Glissez un article à gauche pour le supprimer':items.length+' article(s)'}</span></div><div class="item-list">${items.map(itemCard).join('')}</div></section>`}).join('');}
 function itemCard(x){
- const orig=x.id,subbed=!!state.subs[orig],storesList=eligibleStores(orig),selectedStore=assigned(orig,x.aisle),swipeOpen=openSwipeId===orig;
- const selectedInfo=stores.find(s=>s.id===selectedStore);
- const nextStore=storesList.find(s=>s.id!==selectedStore);
- const nextName=nextStore?.name==='ALDI'?'Aldi':nextStore?.name;
- const blocked=blockedStores(orig);
- const missingIn=blocked.map(id=>{const s=stores.find(s=>s.id===id);return s?.name==='ALDI'?'Aldi':s?.name||id}).join(', ');
+ const orig=x.id,subbed=!!state.subs[orig],storesList=chosen(),selectedStore=assigned(orig,x.aisle),swipeOpen=openSwipeId===orig;
  const productRef=!x.isManual&&selectedStore?evidenceFor(x.eff,selectedStore):null;
  const reference=productRef?`<div class="retail-source">🔎 Exemple de produit référencé : <a href="${esc(productRef.url)}" target="_blank" rel="noopener noreferrer">${esc(productRef.name)} ↗</a><small>Fiche descriptive seulement · La présence dans ce magasin n’est pas vérifiée.</small></div>`:'';
- const storeSelect=storesList.length?`<label class="store-choice-label" for="store-choice-${esc(orig)}">🏪 Magasin où chercher</label><select id="store-choice-${esc(orig)}" class="store-assign" data-assign="${esc(orig)}" aria-label="Choisir le magasin où chercher ${esc(x.name)}">${storesList.map(s=>`<option value="${s.id}" ${s.id===selectedStore?'selected':''}>${esc(s.name)} · ${esc(s.town)}</option>`).join('')}</select><div class="store-stock-hint">📍 Proposition de recherche : stock non vérifié.</div>`:'<span class="store-unavailable">⚠ Plus aucun magasin à essayer pour cet article. Tu peux annuler tes signalements ou choisir d’autres commerces.</span>';
- const absenceActions=chosen().length?`<div class="retail-actions">
-  ${selectedStore&&!state.checked[orig]?`<button type="button" class="store-missing-btn" data-action="missing-store" data-id="${esc(orig)}" data-store="${esc(selectedStore)}" aria-label="Je n’ai pas trouvé ${esc(x.name)} chez ${esc(selectedInfo?.name||'ce magasin')}">${nextStore?'👀 Je ne l’ai pas trouvé ici → Essayer '+esc(nextName):'👀 Je ne l’ai pas trouvé ici'}</button>`:''}
-  ${blocked.length?`<div class="store-missing-history">Noté par toi : pas trouvé chez ${esc(missingIn)}. Les autres magasins restent à vérifier.</div><button class="store-reset-btn" type="button" data-action="reset-store-availability" data-id="${esc(orig)}">↶ Annuler et recommencer</button>`:''}
- </div>`:'';
+ const storeSelect=storesList.length?`<label class="store-choice-label" for="store-choice-${esc(orig)}">🏪 Magasin choisi</label><select id="store-choice-${esc(orig)}" class="store-assign" data-assign="${esc(orig)}" aria-label="Choisir le magasin pour ${esc(x.name)}">${storesList.map(s=>`<option value="${s.id}" ${s.id===selectedStore?'selected':''}>${esc(s.name)} · ${esc(s.town)}</option>`).join('')}</select>`:'';
  const card=`<article class="item-card ${state.checked[orig]?'done':''} ${x.isManual?'manual-swipe-content':''}" data-product="${esc(orig)}">
   <input class="product-check" type="checkbox" data-check="${esc(orig)}" aria-label="Acheté : ${esc(x.name)}" ${state.checked[orig]?'checked':''}>
   ${x.isManual?'<span class="prod-emoji">🛍️</span>':img(x.eff,src(x.eff)?'prod-img':'prod-emoji')}
@@ -399,7 +378,6 @@ function itemCard(x){
    ${x.isManual?'<span class="swipe-mini-hint">← Glisser pour supprimer</span>':`<div class="prod-actions"><button class="linkbtn" data-action="toggle-sub" data-id="${esc(orig)}">${ui.openSub===orig?'Fermer':subbed?'↺ Modifier le remplacement':'⇄ Remplacer l’ingrédient'}</button>${subbed?`<span class="store-tag">À la place : ${esc(DATA.ingredients[orig].name)}</span>`:''}</div>`}
    ${chosen().length?`<div class="store-choice-wrap">${storeSelect}</div>`:''}
    ${reference}
-   ${absenceActions}
    ${ui.openSub===orig&&!x.isManual?subPanel(orig):''}
   </div>
   ${x.isManual?`<div class="manual-item-controls"><button class="manual-swipe-more" type="button" data-action="toggle-manual-swipe" data-id="${esc(orig)}" aria-label="Options de suppression pour ${esc(x.name)}" aria-expanded="${swipeOpen}">⋯</button><button class="manual-desktop-delete" type="button" data-action="delete-manual" data-id="${esc(orig)}">🗑️ Supprimer</button></div>`:''}
@@ -460,7 +438,7 @@ async function share(){
 async function copyList(){await copyText(buildListText())}
 async function shareLink(){
  if(location.protocol==='file:'){notify('Publiez l’application sur GitHub Pages pour partager le lien.');return}
- const payload={ready:true,weekKey:state.weekKey,people:state.people,stores:state.stores,checked:state.checked,subs:state.subs,assign:state.assign,unavailable:state.unavailable,manual:state.manual,photos:state.photos};
+ const payload={ready:true,weekKey:state.weekKey,people:state.people,stores:state.stores,checked:state.checked,subs:state.subs,assign:state.assign,manual:state.manual,photos:state.photos};
  const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'');
  const url=location.origin+location.pathname+'?partage='+encoded;
  try{if(navigator.share){await navigator.share({title:'Importer ma liste Mon Panier',text:'Ouvre ce lien pour importer une copie du menu et de la liste 🥬',url});return}}
@@ -531,30 +509,14 @@ document.addEventListener('click',e=>{
  if(action==='restore-archive'){const old=state.archives[Number(t.dataset.index)];if(old&&isValidPlan(old.plan)&&confirm('Remplacer le menu de cette semaine par ce menu archivé ? La liste actuelle sera remise à zéro.')){state.weekPlan=old.plan.map(x=>x.slice());state.checked={};state.manual=[];store();ui.tab='plan';render();notify('Menu archivé réutilisé !')}return}
  if(action==='copy-list'){copyList();return}
  if(action==='toggle-manual-swipe'){openSwipeId=openSwipeId===t.dataset.id?null:t.dataset.id;applySwipeState();return}
- if(action==='missing-store'){
-  const id=t.dataset.id,storeId=t.dataset.store;
-  if(!state.stores.includes(storeId)||assigned(id)!==storeId)return;
-  const blocked=blockedStores(id);
-  state.unavailable[id]=[...new Set([...blocked,storeId])];
-  delete state.assign[id];
-  store();render();
-  const next=stores.find(s=>s.id===assigned(id));
-  notify(next?'Noté. À chercher ensuite chez '+next.name+' (stock non vérifié).':'Noté. Aucun autre magasin sélectionné à vérifier.');
-  return;
- }
- if(action==='reset-store-availability'){
-  const id=t.dataset.id;delete state.unavailable[id];delete state.assign[id];store();render();
-  notify('Tes signalements ont été annulés pour cet article.');return;
- }
- if(action==='delete-manual'){const id=t.dataset.id;if(!state.manual.some(x=>x.id===id))return;state.manual=state.manual.filter(x=>x.id!==id);delete state.checked[id];delete state.assign[id];delete state.unavailable[id];openSwipeId=null;store();render();notify('Produit supprimé des courses en plus');return}
+ if(action==='delete-manual'){const id=t.dataset.id;if(!state.manual.some(x=>x.id===id))return;state.manual=state.manual.filter(x=>x.id!==id);delete state.checked[id];delete state.assign[id];openSwipeId=null;store();render();notify('Produit supprimé des courses en plus');return}
  if(action==='reset-checked'){if(confirm('Remettre tous les articles en « à acheter » ?')){state.checked={};store();render();notify('Liste réinitialisée')}return}
 });
 document.addEventListener('change',e=>{
  const t=e.target;
  if(t.matches('[data-store]')){changeStore(t.dataset.store);return}
  if(t.matches('[data-check]')){if(t.checked)state.checked[t.dataset.check]=true;else delete state.checked[t.dataset.check];store();render();return}
- if(t.matches('[data-assign]')){state.assign[t.dataset.assign]=t.value;
-  state.unavailable[t.dataset.assign]=blockedStores(t.dataset.assign).filter(id=>id!==t.value);
+ if(t.matches('[data-assign]')){if(chosen().some(s=>s.id===t.value))state.assign[t.dataset.assign]=t.value;
   store();updateResults();return}
  if(t.id==='purchase-filter'){ui.filter=t.value;updateResults();return}
  if(t.id==='store-filter'){ui.shopFilter=t.value;updateResults();return}
