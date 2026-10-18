@@ -1,0 +1,23 @@
+name: Mon Panier - TEST notification volontaire
+
+# Ce workflow de démonstration ne touche pas aux recettes et n'appelle pas OpenAI.
+# Il ne démarre qu'à l'ajout ou la modification de son propre fichier.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/test-notification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demonstration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Simuler une panne pour tester la notification
+        run: |
+          echo "::error::TEST uniquement : échec volontaire pour vérifier l'alerte sur téléphone."
+          exit 1
