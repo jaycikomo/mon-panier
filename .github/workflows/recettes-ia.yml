@@ -1,8 +1,8 @@
-name: Mon Panier - Recettes IA du lundi
+name: Mon Panier - Menus du lundi depuis sauvegarde mensuelle
 
 on:
   schedule:
-    # Tous les lundis vers 05:37 UTC (07:37 heure d'été en France).
+    # Chaque lundi : publier la semaine préparée ; IA uniquement tous les quatre lundis.
     - cron: '37 5 * * 1'
   workflow_dispatch:
 
@@ -28,27 +28,21 @@ jobs:
           python-version: '3.12'
       - name: Vérifier les scripts
         run: python -m py_compile scripts/generate_ai_week.py scripts/sync_store_catalog.py
+      - name: Tester le cache mensuel sans API OpenAI
+        run: python -m unittest discover -s tests -p 'test_monthly_menu.py' -v
       - name: Préparer le catalogue sans IA s'il manque
         run: |
           if [ ! -f data/retail/catalog.json ]; then
             python scripts/sync_store_catalog.py
           fi
-      - name: Vérifier la configuration de l'IA
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          if [ -z "$OPENAI_API_KEY" ]; then
-            echo "::error::Ajoutez OPENAI_API_KEY dans Settings > Secrets and variables > Actions."
-            exit 1
-          fi
-      - name: Créer recettes, menus et photos de la semaine
+      - name: Publier la semaine enregistrée ou générer le prochain lot de quatre semaines
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AI_TEXT_MODEL: gpt-5-mini
           AI_IMAGE_MODEL: gpt-image-1-mini
           AI_IMAGE_COUNT: '0'  # 0 photo IA payante, réutiliser les illustrations existantes
         run: python scripts/generate_ai_week.py
-      - name: Enregistrer les nouveaux menus sur GitHub
+      - name: Enregistrer les semaines préparées et le menu du lundi
         run: |
           git config user.name "mon-panier-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -59,5 +53,16 @@ jobs:
             echo "Aucune modification à publier."
             exit 0
           fi
-          git commit -m "Menus IA de la semaine"
-          git push origin HEAD:main
+          git commit -m "Publie semaine depuis cache ou prépare lot IA de quatre semaines"
+          # Un nouveau commit du site ou du catalogue ne doit pas empêcher la publication.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              echo "Publication réussie."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::Publication des menus impossible après trois tentatives."
+          exit 1
