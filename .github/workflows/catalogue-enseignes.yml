@@ -44,4 +44,16 @@ jobs:
           git add data/retail/catalog.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m "Actualise catalogue enseignes sans IA"
-          git push origin HEAD:main
+          # Le site web peut évoluer pendant la récupération des produits :
+          # réappliquer la mise à jour sans supprimer les commits entretemps.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then
+              echo "Catalogue publié."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::Impossible de publier le catalogue après plusieurs tentatives."
+          exit 1
