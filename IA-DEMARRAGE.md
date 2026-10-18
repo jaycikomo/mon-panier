@@ -1,37 +1,45 @@
-# Mon Panier — recettes générées chaque semaine par IA
+# Mon Panier — quatre semaines en une seule génération IA
 
-## Architecture
-- Site existant : GitHub Pages et `index.html`, utilisable même sans IA.
-- Générateur : `scripts/generate_ai_week.py`, exécuté **côté GitHub Actions**, jamais dans le navigateur.
-- Catalogue de produits/macros : lu dans `index.html`.
-- Sorties publiques : `data/ai/latest.json` et `data/ai/weeks/AAAA-MM-JJ.json`.
-- Photos des plats : `images/ia/AAAA-MM-JJ/` (jusqu'à 7 dîners par semaine), générées uniquement si l'API Images fonctionne.
-- Le site lit `latest.json` depuis GitHub ; il garde une copie des recettes et archives localement pour la consultation ultérieure.
+## Fonctionnement depuis le 18 octobre 2026
+- **Un lundi sur quatre**, si aucune semaine sauvegardée n'est disponible, GitHub appelle **une seule fois** le modèle texte GPT-5 mini pour préparer **32 recettes de base**.
+- Le script crée et valide immédiatement quatre semaines de menus de 7 jours, avec **20 recettes sélectionnées par semaine** : petit-déjeuner, déjeuner, collation et dîner.
+- Les recettes de base peuvent revenir à plusieurs semaines, mais les choix et combinaisons changent. Ce ne sont pas 80 nouvelles recettes distinctes.
+- Les quatre semaines sont enregistrées dans `data/ai/weeks/AAAA-MM-JJ.json` et le lot dans `data/ai/batches/AAAA-MM-JJ.json`.
+- **Chaque lundi suivant**, GitHub copie la semaine préenregistrée dans `data/ai/latest.json`. **Zéro token OpenAI** les semaines 2, 3 et 4.
+- Le lundi après la quatrième semaine, un **nouveau lot de quatre semaines** est préparé si le secret API est toujours actif.
+- Les fichiers hebdomadaires sont conservés ; l'interface affiche « Semaine 1/4 » à « Semaine 4/4 ».
+- Le catalogue Lidl / Aldi / Netto est actualisé le dimanche avec des sources gratuites ; **aucun stock local n'est garanti**.
 
-## Activation (une seule fois)
-1. Créez une clé secrète API depuis https://platform.openai.com/api-keys . **L'API est facturée séparément de ChatGPT**, selon les modèles et la consommation. Activez la facturation API si nécessaire, et définissez votre budget dans la plateforme.
-2. Ouvrez https://github.com/jaycikomo/mon-panier/settings/secrets/actions .
-3. Cliquez sur **New repository secret**, nom **OPENAI_API_KEY**, valeur = votre clé API. Enregistrez.
-4. Ouvrez https://github.com/jaycikomo/mon-panier/actions/workflows/recettes-ia.yml puis **Run workflow**, branche `main`. Cela créera les recettes de la semaine en cours.
-5. Patientez jusqu'à ce que l'exécution soit verte. Vérifiez la présence de `data/ai/latest.json` sur GitHub. Actualisez l'application dans Safari.
-6. Chaque lundi, GitHub Actions exécutera le même processus automatiquement (horaire UTC, légère variation possible). La mise à jour du fichier sur GitHub est récupérée directement par l'application.
+## Calendrier du premier lot
+Les prochaines dates sont :
+1. **Lundi 19 octobre 2026** : génération payante unique du lot (semaines du 19 et du 26 octobre, du 2 et du 9 novembre).
+2. **Lundi 26 octobre 2026** : publication depuis la sauvegarde, sans appel IA.
+3. **Lundi 2 novembre 2026** : publication depuis la sauvegarde, sans appel IA.
+4. **Lundi 9 novembre 2026** : publication depuis la sauvegarde, sans appel IA.
+5. **Lundi 16 novembre 2026** : nouveau lot de quatre semaines, un appel IA.
 
-## Photos et coût
-Le générateur tente de créer jusqu'à **7 photos de dîners** avec le modèle Images API `gpt-image-1-mini`, qualité `low` ; les autres repas réutilisent les illustrations d'ingrédients. En cas d'échec, les recettes continuent de fonctionner avec les images existantes. Les photos sont des **illustrations générées**, pas les emballages réels des magasins.
+Ces dates restent conditionnées à l'exécution réussie du générateur et au fonctionnement de GitHub Actions.
 
-Pour réduire les dépenses, définissez une variable de dépôt `AI_IMAGE_COUNT` égale à `0` ou `3` dans **Settings → Secrets and variables → Actions → Variables**. Le script limite à 7 maximum. L'API facture les appels aux recettes et aux images ; l'application ne peut pas garantir un prix fixe.
+## GitHub Actions
+- [Menus du lundi depuis sauvegarde mensuelle](https://github.com/jaycikomo/mon-panier/actions/workflows/recettes-ia.yml) : `37 5 * * 1` (05 h 37 UTC, retard possible).
+- [Catalogue gratuit des enseignes](https://github.com/jaycikomo/mon-panier/actions/workflows/catalogue-enseignes.yml) : `20 5 * * 0` (dimanche, UTC).
+- [Tests sans IA](https://github.com/jaycikomo/mon-panier/actions/workflows/tests-menus.yml) : vérifie les quatre semaines et le cache.
 
-## Fonctionnement nutritionnel
-L'IA rédige 20 recettes originales par semaine : 3 petits-déjeuners, 7 déjeuners, 3 collations, 7 dîners. Un algorithme calcule les macronutriments à partir des valeurs pour 100 g dans le catalogue, puis compose 7 journées visant **1915 kcal, 130 g de protéines, 180 g de glucides et 75 g de lipides**. Si aucune composition n'est assez proche ou qu'une réponse est invalide, le script échoue et **ne publie pas** de nouvelles recettes erronées. L'application conserve alors ses menus classiques. Les estimations ne remplacent pas les étiquettes nutritionnelles.
+Si une nouvelle semaine est déjà sauvegardée, le générateur la publie **avant même de vérifier la clé API**. Si elle est déjà publiée, il ne fait rien. Lancer manuellement le workflow dans la semaine ne provoque donc pas de nouvelle facture tant que cette semaine est déjà enregistrée.
 
-## Historique et partage
-Le dépôt conserve les fichiers hebdomadaires dans `data/ai/weeks/`. L'application conserve aussi les recettes consultées dans le `localStorage` du navigateur pour rendre les anciens menus archivés consultables. Cela ne synchronise pas les coches entre appareils : le bouton Partager envoie une copie de la liste. Une vraie synchronisation familiale demanderait une base distante et une authentification.
+## Coûts et sécurité
+- **1 appel de génération texte pour 4 semaines** dans le fonctionnement normal, avec `gpt-5-mini`.
+- **0 génération d'image IA** (le code de génération d'images a été retiré).
+- **0 token pour consulter les recettes, cocher les courses et signaler un article absent chez Lidl / Aldi / Netto**.
+- L'API OpenAI est facturée séparément de ChatGPT Plus. Le tarif réel dépend des tokens consommés.
+- Le workflow ne retente pas automatiquement l'appel payant si la réponse JSON est invalide. Une nouvelle exécution future non sauvegardée peut être facturée ; surveillez la consommation dans [OpenAI API Usage](https://platform.openai.com/usage).
+- La clé reste exclusivement dans le secret GitHub `OPENAI_API_KEY`, jamais dans les fichiers publiés.
+
+## Nutrition
+Les macros sont recalculées en Python à partir du catalogue générique et les 7 journées visent environ **1 915 kcal, 130 g de protéines, 180 g de glucides et 75 g de lipides par adulte**. Un menu invalide n'est pas publié. Les estimations peuvent différer des étiquettes de marques et des portions réellement consommées.
 
 ## Dépannage
-- **L'interface affiche “IA en préparation”** : vérifier que le secret `OPENAI_API_KEY` existe, que le workflow s'est exécuté avec succès, et que `data/ai/latest.json` correspond au lundi de cette semaine.
-- **Workflow rouge** : dans **Actions → Mon Panier - Recettes IA du lundi**, ouvrir les logs. Un manque de crédits API, un accès au modèle indisponible, un JSON invalide ou une permission GitHub insuffisante peut empêcher la publication.
-- **Images absentes** : vérifier l'accès à Images API et `AI_IMAGE_COUNT`. Le reste de l'application reste utilisable.
-- **Site ancien en cache** : actualisez Safari puis rouvrez le site.
-- **Automatisation désactivée** : GitHub peut désactiver les workflows planifiés des dépôts publics après 60 jours d'inactivité ; la réactiver dans l'onglet Actions si besoin.
-
-**Sécurité :** ne commitez jamais la clé API dans `index.html`, un fichier du dépôt ou un lien de partage ; utilisez uniquement GitHub Secrets.
+- Si `data/ai/latest.json` ne correspond pas au lundi courant, ouvrir le workflow **Menus du lundi depuis sauvegarde mensuelle** et lire son erreur. Sur une semaine déjà enregistrée, il ne doit pas appeler OpenAI.
+- En cas de manque de crédit au renouvellement du lot, la génération ne publiera pas une nouvelle semaine et les menus habituels restent disponibles.
+- Le site ne synchronise pas les listes de courses entre téléphones : partage par lien = copie, pas synchronisation en temps réel.
+- GitHub peut retarder l'exécution planifiée ; actualisez l'application après la publication.
