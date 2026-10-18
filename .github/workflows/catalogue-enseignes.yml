@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/sync_store_catalog.py'
+      - 'data/retail/official-references.json'
       - '.github/workflows/catalogue-enseignes.yml'
   schedule:
     # Le dimanche : catalogue actualisé avant la génération IA du lundi.
