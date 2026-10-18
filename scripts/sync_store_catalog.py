@@ -113,8 +113,10 @@ ALLOWED_HOSTS = {
 }
 
 def official_evidence(catalogue):
-    """Charge les références officielles vérifiées et traçables.
-    Les promotions archivées sont signalées et peuvent ne plus exister.
+    """Ne conserve que des liens directs vers un produit individuel.
+
+    Une page de rayon, l'accueil d'une enseigne ou une promotion archivée
+    ne prouve pas qu'un produit précis est référencé en ce moment.
     """
     if not OFFICIAL.is_file():
         return {}, 0
@@ -127,6 +129,7 @@ def official_evidence(catalogue):
         store, ingredient = item.get("store"), item.get("id")
         name, url = item.get("name"), item.get("url")
         if (store not in STORES or ingredient not in ALIASES
+                or item.get("kind") != "product"
                 or not isinstance(name, str) or not 4 <= len(name) <= 110
                 or not isinstance(url, str)
                 or not url.startswith(ALLOWED_HOSTS[store])
@@ -149,7 +152,8 @@ def main():
         except (ValueError, OSError):
             pass
 
-    # Les sources officielles vérifiées forment une base même en cas de 503 OFF.
+    # Seules les fiches produit directes forment un référencement exploitable,
+    # même si Open Food Facts renvoie 503. Jamais une preuve de stock local.
     by_store, official_count = official_evidence(ALIASES)
     errors = []
     community_count = 0
