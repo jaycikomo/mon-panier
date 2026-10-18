@@ -73,12 +73,14 @@ def retail_inventory(catalogue):
             return catalogue, {"mode": "fallback", "matches": len(available),
                                "documented_ids": sorted(available),
                                "reason": "Référencement incomplet"}
-        selected = {i: value for i, value in catalogue.items() if i in available}
-        print("Recettes limitées à", len(selected),
-              "ingrédients rapprochés des catalogues Lidl, Aldi et Netto.")
-        return selected, {"mode": "evidence", "matches": len(selected),
-                          "documented_ids": sorted(available),
-                          "source": "Open Food Facts", "updated": snapshot.get("updated")}
+        # Ne pas interdire les autres aliments : un catalogue participatif incomplet
+        # ne doit jamais bloquer une génération payante ni forcer un menu déséquilibré.
+        # L'IA privilégie plutôt les références documentées dans son prompt compact.
+        print("Références privilégiées :", len(available),
+              "ingrédients ; alternatives alimentaires conservées.")
+        return catalogue, {"mode": "prioritized", "matches": len(available),
+                           "documented_ids": sorted(available),
+                           "source": "Open Food Facts", "updated": snapshot.get("updated")}
     except (OSError, ValueError, TypeError, KeyError) as err:
         print("Catalogue produits inexploitable :", err)
         return catalogue, {"mode": "fallback", "reason": "Catalogue invalide"}
