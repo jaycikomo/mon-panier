@@ -2,13 +2,11 @@
 """Génère un lot de quatre semaines avec un seul appel IA, puis publie depuis le cache.
 Aucune clé API ne doit être placée dans index.html ni dans les JSON publics.
 """
-import base64
 import datetime as dt
 import json
 import os
 import pathlib
 import re
-import sys
 import urllib.error
 import urllib.request
 from zoneinfo import ZoneInfo
@@ -19,7 +17,6 @@ WEEKS_DIR = ROOT / "data/ai/weeks"
 BATCH_DIR = ROOT / "data/ai/batches"
 BATCH_WEEKS = 4
 MODEL = os.environ.get("AI_TEXT_MODEL", "gpt-5-mini")
-IMAGE_MODEL = os.environ.get("AI_IMAGE_MODEL", "gpt-image-1-mini")
 API_KEY = os.getenv("OPENAI_API_KEY", "")
 TARGET = {"p": 130, "c": 180, "f": 75, "cal": 1915}
 
@@ -251,21 +248,6 @@ def build_plan(recipes, catalogue):
         result.append(list(best[1]))
         summaries.append({"kcal": round(best[2]), "proteines": round(best[3])})
     return result, summaries
-
-def make_photo(rec, key, week):
-    prompt = ("Photographie culinaire réaliste, vue de trois quarts, belle lumière naturelle, "
-              "assiette individuelle appétissante, sans texte, sans logo, sans watermark : " +
-              rec["name"] + ". Ingrédients principaux : " +
-              ", ".join(x["id"] for x in rec["items"][:5]) + ".")
-    payload = request("images/generations", {
-        "model": IMAGE_MODEL, "size": "1024x1024", "quality": "low",
-        "output_format": "webp", "prompt": prompt
-    }, timeout=260)
-    binary = base64.b64decode(payload["data"][0]["b64_json"])
-    output = ROOT / "images" / "ia" / week / (key + ".webp")
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(binary)
-    return "https://raw.githubusercontent.com/jaycikomo/mon-panier/main/" + output.relative_to(ROOT).as_posix()
 
 def select_week(bank, batch_start, offset):
     """Prépare 20 recettes adaptées à chaque semaine depuis les mêmes 32 bases.
