@@ -105,20 +105,57 @@ def fetch(store):
         raise ValueError("Réponse de catalogue invalide")
     return result["products"]
 
+OFFICIAL = ROOT / "data" / "retail" / "official-references.json"
+ALLOWED_HOSTS = {
+    "lidl": "https://www.lidl.fr/",
+    "aldi": "https://www.aldi.fr/",
+    "netto": "https://www.netto.fr/",
+}
+
+def official_evidence(catalogue):
+    """Charge les références officielles vérifiées et traçables.
+    Les promotions archivées sont signalées et peuvent ne plus exister.
+    """
+    if not OFFICIAL.is_file():
+        return {}, 0
+    source = json.loads(OFFICIAL.read_text(encoding="utf-8"))
+    by_store = {name: [] for name in STORES}
+    seen = set()
+    for item in source.get("items", []):
+        if not isinstance(item, dict):
+            continue
+        store, ingredient = item.get("store"), item.get("id")
+        name, url = item.get("name"), item.get("url")
+        if (store not in STORES or ingredient not in ALIASES
+                or not isinstance(name, str) or not 4 <= len(name) <= 110
+                or not isinstance(url, str)
+                or not url.startswith(ALLOWED_HOSTS[store])
+                or (store, ingredient, url) in seen):
+            continue
+        seen.add((store, ingredient, url))
+        by_store[store].append({
+            "name": name, "ingredients": [ingredient], "url": url,
+            "source": "Site officiel", "kind": item.get("kind", "listing"),
+            "reviewed": source.get("checked_on", ""),
+        })
+    return by_store, len(seen)
+
+
 def main():
     old = {}
-    if OUTPUT.exists():
+    if OUTPUT.is_file():
         try:
             old = json.loads(OUTPUT.read_text(encoding="utf-8"))
         except (ValueError, OSError):
             pass
-    by_store = dict(old.get("stores", {}))
+
+    # Les sources officielles vérifiées forment une base même en cas de 503 OFF.
+    by_store, official_count = official_evidence(ALIASES)
     errors = []
-    successes = 0
+    community_count = 0
     for store in STORES:
         try:
             raw = fetch(store)
-            products = []
             used_codes = set()
             for p in raw:
                 code = str(p.get("code", ""))
@@ -129,41 +166,59 @@ def main():
                 if not hits:
                     continue
                 used_codes.add(code)
-                products.append({
+                by_store[store].append({
                     "name": name[:110], "brand": str(p.get("brands") or "")[:65],
                     "ean": code, "ingredients": hits[:3],
-                    "url": SOURCE + "/product/" + code,
+                    "url": SOURCE + "/product/" + code, "source": "Open Food Facts",
                 })
-            # Conserver les références vérifiables même si peu nombreuses.
-            by_store[store] = products[:180]
-            successes += 1
-            print(store, len(raw), "produits consultés,", len(by_store[store]), "correspondances")
+                community_count += 1
+            print(store, len(raw), "fiches participatives consultées,",
+                  len(used_codes), "produits rapprochés.")
         except (urllib.error.URLError, TimeoutError, ValueError, OSError) as exc:
             errors.append(store + ": " + str(exc)[:160])
-            print("Catalogue indisponible, conservation du précédent :", errors[-1])
+            print("Source communautaire indisponible, références officielles conservées :",
+                  errors[-1])
         time.sleep(1)
-    if not successes and not old:
-        print("Pas de catalogue fiable disponible, génération classique conservée.")
-        return
+
+    # Si les références officielles et communautaires sont indisponibles,
+    # ne pas écraser un catalogue antérieur qui fonctionnait.
+    if not official_count and not community_count:
+        if old.get("evidence"):
+            print("Réutilisation du dernier catalogue valide.")
+            return
+        raise RuntimeError("Aucune référence officielle ou communautaire exploitable.")
+
     evidence = {}
     for store in STORES:
-        for p in by_store.get(store, []):
+        for p in by_store[store][:200]:
             for ingredient in p.get("ingredients", []):
                 hits = evidence.setdefault(ingredient, {}).setdefault(store, [])
-                if len(hits) < 3:
-                    hits.append({"name": p["name"], "brand": p["brand"],
-                                 "ean": p["ean"], "url": p["url"]})
+                if len(hits) < 4:
+                    hits.append({k: p[k] for k in ("name", "brand", "ean", "url", "source", "kind", "reviewed") if k in p})
+
     data = {
-        "source": "Open Food Facts", "source_url": SOURCE,
-        "license": "ODbL-1.0", "disclaimer":
-            "Fiches participatives historiques, pas de garantie de disponibilité ni de prix en rayon.",
+        "source": "Sites officiels + Open Food Facts",
+        "source_url": SOURCE,
+        "license": "ODbL-1.0 pour les seules fiches Open Food Facts",
+        "disclaimer": (
+            "Références observées en ligne (dont offres anciennes). "
+            "Aucun stock local ni prix actuel garanti."
+        ),
         "updated": dt.datetime.now(dt.timezone.utc).isoformat(),
-        "priority": list(STORES), "stores": by_store, "evidence": evidence,
-        "matched_ingredients": sorted(evidence), "errors": errors,
+        "official_reviewed": "2026-10-18",
+        "priority": list(STORES),
+        "official_count": official_count,
+        "community_count": community_count,
+        "stores": {name: values[:200] for name, values in by_store.items()},
+        "evidence": evidence,
+        "matched_ingredients": sorted(evidence),
+        "errors": errors,
     }
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print("Catalogue enregistré :", len(evidence), "ingrédients rapprochés.")
+    print("Catalogue enregistré :", official_count, "références officielles,",
+          community_count, "fiches participatives ;",
+          len(evidence), "ingrédients représentés.")
 
 if __name__ == "__main__":
     main()
