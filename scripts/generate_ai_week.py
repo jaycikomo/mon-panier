@@ -46,6 +46,41 @@ def current_monday():
     today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
     return (today - dt.timedelta(days=today.weekday())).isoformat()
 
+def retail_inventory(catalogue):
+    """Limite les recettes aux ingrédients documentés chez Lidl/Aldi/Netto,
+    uniquement si la couverture permet des menus variés et équilibrés.
+    Sinon, utilise le catalogue alimentaire existant sans inventer de stock.
+    """
+    path = ROOT / "data" / "retail" / "catalog.json"
+    if not path.exists():
+        print("Catalogue enseignes absent : ingrédients habituels conservés.")
+        return catalogue, {"mode": "fallback", "reason": "Aucune synchronisation de produits"}
+    try:
+        snapshot = json.loads(path.read_text(encoding="utf-8"))
+        available = {i for i, v in snapshot.get("evidence", {}).items()
+                     if i in catalogue and any(v.get(s) for s in ("lidl", "aldi", "netto"))}
+        aisles = {
+            "Viandes & poissons": 4, "Produits laitiers": 2,
+            "Féculents": 4, "Fruits & légumes": 7, "Épicerie & huiles": 2,
+        }
+        enough = len(available) >= 24 and all(
+            sum(catalogue[i]["aisle"] == aisle for i in available) >= required
+            for aisle, required in aisles.items()
+        )
+        if not enough:
+            print("Catalogue partiel (", len(available),
+                  "ingrédients), recettes habituelles conservées.")
+            return catalogue, {"mode": "fallback", "matches": len(available),
+                               "reason": "Référencement incomplet"}
+        selected = {i: value for i, value in catalogue.items() if i in available}
+        print("Recettes limitées à", len(selected),
+              "ingrédients rapprochés des catalogues Lidl, Aldi et Netto.")
+        return selected, {"mode": "evidence", "matches": len(selected),
+                          "source": "Open Food Facts", "updated": snapshot.get("updated")}
+    except (OSError, ValueError, TypeError, KeyError) as err:
+        print("Catalogue produits inexploitable :", err)
+        return catalogue, {"mode": "fallback", "reason": "Catalogue invalide"}
+
 def generate_recipes(catalogue, week):
     inventory = [{"id": key, "nom": val["name"], "P": val["macros"][0],
                   "G": val["macros"][1], "L": val["macros"][2]}
@@ -229,7 +264,7 @@ def main():
         if last.get("week") == week:
             print("Recettes de cette semaine déjà disponibles : aucune nouvelle dépense.")
             return
-    catalogue = ingredients()
+    catalogue, retail_meta = retail_inventory(ingredients())
     for attempt in range(2):
         raw = generate_recipes(catalogue, week)
         try:
@@ -253,7 +288,7 @@ def main():
             except Exception as err:
                 print("Photo facultative non créée pour", key, ":", str(err)[:400], file=sys.stderr)
     data = {"week": week, "generated": dt.datetime.now(dt.timezone.utc).isoformat(),
-            "model": MODEL, "target": TARGET, "plan": plan,
+            "model": MODEL, "target": TARGET, "retail": retail_meta, "plan": plan,
             "nutrition": nutrition, "recipes": recipes,
             "notice": "Macros estimées depuis une table générique d'ingrédients, à vérifier sur les emballages."}
     week_path = ROOT / "data/ai/weeks" / (week + ".json")
