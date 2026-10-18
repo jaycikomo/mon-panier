@@ -382,13 +382,14 @@ function itemCard(x){
  const orig=x.id,subbed=!!state.subs[orig],storesList=eligibleStores(orig),selectedStore=assigned(orig,x.aisle),swipeOpen=openSwipeId===orig;
  const selectedInfo=stores.find(s=>s.id===selectedStore);
  const nextStore=storesList.find(s=>s.id!==selectedStore);
+ const nextName=nextStore?.name==='ALDI'?'Aldi':nextStore?.name;
  const blocked=blockedStores(orig);
- const missingIn=blocked.map(id=>stores.find(s=>s.id===id)?.name||id).join(', ');
+ const missingIn=blocked.map(id=>{const s=stores.find(s=>s.id===id);return s?.name==='ALDI'?'Aldi':s?.name||id}).join(', ');
  const productRef=!x.isManual&&selectedStore?evidenceFor(x.eff,selectedStore):null;
  const reference=productRef?`<div class="retail-source">🔎 Exemple de produit référencé : <a href="${esc(productRef.url)}" target="_blank" rel="noopener noreferrer">${esc(productRef.name)} ↗</a><small>Fiche descriptive seulement · La présence dans ce magasin n’est pas vérifiée.</small></div>`:'';
  const storeSelect=storesList.length?`<label class="store-choice-label" for="store-choice-${esc(orig)}">🏪 Magasin où chercher</label><select id="store-choice-${esc(orig)}" class="store-assign" data-assign="${esc(orig)}" aria-label="Choisir le magasin où chercher ${esc(x.name)}">${storesList.map(s=>`<option value="${s.id}" ${s.id===selectedStore?'selected':''}>${esc(s.name)} · ${esc(s.town)}</option>`).join('')}</select><div class="store-stock-hint">📍 Proposition de recherche : stock non vérifié.</div>`:'<span class="store-unavailable">⚠ Plus aucun magasin à essayer pour cet article. Tu peux annuler tes signalements ou choisir d’autres commerces.</span>';
  const absenceActions=chosen().length?`<div class="retail-actions">
-  ${selectedStore&&!state.checked[orig]?`<button type="button" class="store-missing-btn" data-action="missing-store" data-id="${esc(orig)}" data-store="${esc(selectedStore)}" aria-label="Je n’ai pas trouvé ${esc(x.name)} chez ${esc(selectedInfo?.name||'ce magasin')}">${nextStore?'👀 Je ne l’ai pas trouvé ici → Essayer '+esc(nextStore.name):'👀 Je ne l’ai pas trouvé ici'}</button>`:''}
+  ${selectedStore&&!state.checked[orig]?`<button type="button" class="store-missing-btn" data-action="missing-store" data-id="${esc(orig)}" data-store="${esc(selectedStore)}" aria-label="Je n’ai pas trouvé ${esc(x.name)} chez ${esc(selectedInfo?.name||'ce magasin')}">${nextStore?'👀 Je ne l’ai pas trouvé ici → Essayer '+esc(nextName):'👀 Je ne l’ai pas trouvé ici'}</button>`:''}
   ${blocked.length?`<div class="store-missing-history">Noté par toi : pas trouvé chez ${esc(missingIn)}. Les autres magasins restent à vérifier.</div><button class="store-reset-btn" type="button" data-action="reset-store-availability" data-id="${esc(orig)}">↶ Annuler et recommencer</button>`:''}
  </div>`:'';
  const card=`<article class="item-card ${state.checked[orig]?'done':''} ${x.isManual?'manual-swipe-content':''}" data-product="${esc(orig)}">
