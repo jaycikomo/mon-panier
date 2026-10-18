@@ -3,14 +3,14 @@
   "source_url": "https://world.openfoodfacts.org",
   "license": "ODbL-1.0 pour les seules fiches Open Food Facts",
   "disclaimer": "Références observées en ligne (dont offres anciennes). Aucun stock local ni prix actuel garanti.",
-  "updated": "2026-10-18T14:00:31.743402+00:00",
+  "updated": "2026-10-18T14:02:45.498896+00:00",
   "official_reviewed": "2026-10-18",
   "priority": [
     "lidl",
     "aldi",
     "netto"
   ],
-  "official_count": 14,
+  "official_count": 23,
   "community_count": 0,
   "stores": {
     "lidl": [
@@ -115,6 +115,66 @@
         "source": "Site officiel",
         "kind": "archived_offer",
         "reviewed": "2026-10-18"
+      },
+      {
+        "name": "ST-CLÉMENT Escalope de dinde",
+        "ingredients": [
+          "dinde"
+        ],
+        "url": "https://www.aldi.fr/fiches-produits/escalope-de-dinde-5010284.html",
+        "source": "Site officiel",
+        "kind": "product",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "ST-CLÉMENT Émincés de filets de poulet",
+        "ingredients": [
+          "poulet"
+        ],
+        "url": "https://www.aldi.fr/produits/viande-poisson/volaille.html",
+        "source": "Site officiel",
+        "kind": "listing",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "ALL SEASONS Brocolis en fleurettes surgelés",
+        "ingredients": [
+          "brocoli"
+        ],
+        "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
+        "source": "Site officiel",
+        "kind": "listing",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "ALL SEASONS Haricots verts extra fins surgelés",
+        "ingredients": [
+          "haricots"
+        ],
+        "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
+        "source": "Site officiel",
+        "kind": "listing",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Bananes Bio Fairtrade Cavendish",
+        "ingredients": [
+          "banane"
+        ],
+        "url": "https://www.aldi.fr/fiches-produits/bananes-bio-certifiees-fairtrade-8443.html",
+        "source": "Site officiel",
+        "kind": "archived_offer",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Pommes de terre à chair ferme",
+        "ingredients": [
+          "pommesdeterre"
+        ],
+        "url": "https://www.aldi.fr/",
+        "source": "Site officiel",
+        "kind": "archived_offer",
+        "reviewed": "2026-10-18"
       }
     ],
     "netto": [
@@ -156,6 +216,36 @@
         "url": "https://www.netto.fr/frais",
         "source": "Site officiel",
         "kind": "listing",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Courgettes fraîches (gamme fruits et légumes)",
+        "ingredients": [
+          "courgette"
+        ],
+        "url": "https://www.netto.fr/frais",
+        "source": "Site officiel",
+        "kind": "range",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Pommes fraîches (gamme fruits et légumes)",
+        "ingredients": [
+          "pomme"
+        ],
+        "url": "https://www.netto.fr/frais",
+        "source": "Site officiel",
+        "kind": "range",
+        "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Concombres frais (gamme fruits et légumes)",
+        "ingredients": [
+          "concombre"
+        ],
+        "url": "https://www.netto.fr/frais",
+        "source": "Site officiel",
+        "kind": "range",
         "reviewed": "2026-10-18"
       }
     ]
@@ -290,7 +380,60 @@
         }
       ]
     },
+    "dinde": {
+      "aldi": [
+        {
+          "name": "ST-CLÉMENT Escalope de dinde",
+          "url": "https://www.aldi.fr/fiches-produits/escalope-de-dinde-5010284.html",
+          "source": "Site officiel",
+          "kind": "product",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "poulet": {
+      "aldi": [
+        {
+          "name": "ST-CLÉMENT Émincés de filets de poulet",
+          "url": "https://www.aldi.fr/produits/viande-poisson/volaille.html",
+          "source": "Site officiel",
+          "kind": "listing",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "brocoli": {
+      "aldi": [
+        {
+          "name": "ALL SEASONS Brocolis en fleurettes surgelés",
+          "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
+          "source": "Site officiel",
+          "kind": "listing",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "haricots": {
+      "aldi": [
+        {
+          "name": "ALL SEASONS Haricots verts extra fins surgelés",
+          "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
+          "source": "Site officiel",
+          "kind": "listing",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
     "banane": {
+      "aldi": [
+        {
+          "name": "Bananes Bio Fairtrade Cavendish",
+          "url": "https://www.aldi.fr/fiches-produits/bananes-bio-certifiees-fairtrade-8443.html",
+          "source": "Site officiel",
+          "kind": "archived_offer",
+          "reviewed": "2026-10-18"
+        }
+      ],
       "netto": [
         {
           "name": "Netto Banane Cavendish",
@@ -300,13 +443,65 @@
           "reviewed": "2026-10-18"
         }
       ]
+    },
+    "pommesdeterre": {
+      "aldi": [
+        {
+          "name": "Pommes de terre à chair ferme",
+          "url": "https://www.aldi.fr/",
+          "source": "Site officiel",
+          "kind": "archived_offer",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "courgette": {
+      "netto": [
+        {
+          "name": "Courgettes fraîches (gamme fruits et légumes)",
+          "url": "https://www.netto.fr/frais",
+          "source": "Site officiel",
+          "kind": "range",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "pomme": {
+      "netto": [
+        {
+          "name": "Pommes fraîches (gamme fruits et légumes)",
+          "url": "https://www.netto.fr/frais",
+          "source": "Site officiel",
+          "kind": "range",
+          "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "concombre": {
+      "netto": [
+        {
+          "name": "Concombres frais (gamme fruits et légumes)",
+          "url": "https://www.netto.fr/frais",
+          "source": "Site officiel",
+          "kind": "range",
+          "reviewed": "2026-10-18"
+        }
+      ]
     }
   },
   "matched_ingredients": [
     "avoine",
     "banane",
+    "brocoli",
+    "concombre",
+    "courgette",
+    "dinde",
+    "haricots",
     "huile",
     "oeufs",
+    "pomme",
+    "pommesdeterre",
+    "poulet",
     "riz",
     "skyr",
     "thon"
