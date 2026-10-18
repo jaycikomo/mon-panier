@@ -89,8 +89,18 @@ def fetch(store):
         "User-Agent": UA,
         "Accept": "application/json",
     })
-    with urllib.request.urlopen(request, timeout=35) as res:
-        result = json.load(res)
+    # Un 503 peut venir d'une limitation temporaire côté Open Food Facts.
+    # Une seule nouvelle tentative, sans IA et sans marteler leur API.
+    for attempt in range(2):
+        try:
+            with urllib.request.urlopen(request, timeout=35) as res:
+                result = json.load(res)
+            break
+        except urllib.error.HTTPError as exc:
+            if exc.code not in (429, 503) or attempt:
+                raise
+            print(f"{store}: API momentanément indisponible ({exc.code}), nouvelle tentative dans 22 s.")
+            time.sleep(22)
     if not isinstance(result.get("products"), list):
         raise ValueError("Réponse de catalogue invalide")
     return result["products"]
