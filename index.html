@@ -108,7 +108,8 @@ async function loadRetailCatalog(){
   const r=await fetch(RETAIL_CATALOG_URL+'?v='+Math.floor(Date.now()/3600000),{cache:'no-store'});
   if(!r.ok)return;
   const data=await r.json();
-  if(data&&data.source==='Open Food Facts'&&data.evidence&&typeof data.evidence==='object'){
+  if(data&&data.evidence&&typeof data.evidence==='object'&&
+     (data.source==='Open Food Facts'||data.source==='Sites officiels + Open Food Facts')){
    retailCatalog=data;
    if(ui.tab==='courses')updateResults();
    else if(ui.tab==='magasins')render();
@@ -314,10 +315,18 @@ function assigned(id,aisle){
  if(state.assign[id]&&storesReady.some(s=>s.id===state.assign[id]))return state.assign[id];
  return storesReady.length?storesReady[0].id:'';
 }
+function safeRetailUrl(url){
+ if(typeof url!=='string')return false;
+ try{
+  const parsed=new URL(url);
+  return parsed.protocol==='https:'&&['www.lidl.fr','www.aldi.fr','www.netto.fr','world.openfoodfacts.org'].includes(parsed.hostname);
+ }catch{return false}
+}
 function evidenceFor(id,storeId){
  const tag=storeId==='aldi'?'aldi':storeId==='netto'?'netto':storeId&&storeId.startsWith('lidl-')?'lidl':'';
  const matches=tag&&retailCatalog?.evidence?.[id]?.[tag];
- return Array.isArray(matches)?matches.find(x=>/^\d{8,14}$/.test(String(x.ean))):null;
+ if(!Array.isArray(matches))return null;
+ return matches.find(x=>safeRetailUrl(x.url))||null;
 }
 function progress(){const a=listData();return {done:a.filter(x=>!!state.checked[x.id]).length,total:a.length}}
 function notify(msg){document.querySelector('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
@@ -360,7 +369,7 @@ function itemCard(x){
  const nextStore=storesList.find(s=>s.id!==selectedStore);
  const blocked=blockedStores(orig);
  const productRef=!x.isManual&&selectedStore?evidenceFor(x.eff,selectedStore):null;
- const reference=productRef?`<div class="retail-source">📦 Fiche produit référencée : <a href="https://world.openfoodfacts.org/product/${esc(productRef.ean)}" target="_blank" rel="noopener noreferrer"> ${esc(productRef.name)} ↗</a><small>Open Food Facts · pas une disponibilité garantie</small></div>`:'';
+ const reference=productRef?`<div class="retail-source">📦 Référence trouvée : <a href="${esc(productRef.url)}" target="_blank" rel="noopener noreferrer">${esc(productRef.name)} ↗</a><small>${productRef.source==='Site officiel'?'Site officiel de l’enseigne':esc(productRef.source||'Open Food Facts')}${productRef.kind==='archived_offer'?' · ancienne offre (peut avoir expiré)':''} · Stock et prix local non vérifiés</small></div>`:'';
  const storeSelect=storesList.length?`<select class="store-assign" data-assign="${esc(orig)}" aria-label="Magasin pour ${esc(x.name)}">${storesList.map(s=>`<option value="${s.id}" ${s.id===selectedStore?'selected':''}>📍 ${esc(s.name)} · ${esc(s.town)}</option>`).join('')}</select>`:'<span class="store-unavailable">⚠ Aucun magasin sélectionné encore disponible pour cet article.</span>';
  const absenceActions=chosen().length?`<div class="retail-actions">
   ${selectedStore?`<button type="button" class="store-missing-btn" data-action="missing-store" data-id="${esc(orig)}" data-store="${esc(selectedStore)}">✕ Pas disponible chez ${esc(selectedInfo?selectedInfo.name:'ce magasin')}${nextStore?' → '+esc(nextStore.name):''}</button>`:''}
@@ -391,7 +400,7 @@ function retailStatus(){
  if(!retailCatalog)return '<div class="retail-catalog-note">📦 Catalogue des produits : première synchronisation en attente. Les menus restent accessibles sans données externes. <a href="https://github.com/jaycikomo/mon-panier/actions/workflows/catalogue-enseignes.yml" target="_blank" rel="noopener noreferrer">Actualiser gratuitement ↗</a></div>';
  const count=Object.keys(retailCatalog.evidence||{}).length;
  const date=retailCatalog.updated?new Date(retailCatalog.updated).toLocaleDateString('fr-FR'):'';
- return '<div class="retail-catalog-note">📦 '+count+' familles d’ingrédients rapprochées de fiches produit Lidl, Aldi et Netto. Source : <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener noreferrer">Open Food Facts</a> (ODbL)'+(date?' · actualisé le '+esc(date):'')+'. <b>Ce ne sont pas des stocks en magasin.</b></div>';
+ return '<div class="retail-catalog-note">📦 <b>'+count+' ingrédients documentés</b>, '+(Number(retailCatalog.official_count)||0)+' références sur les sites officiels'+(retailCatalog.community_count?', '+retailCatalog.community_count+' fiches Open Food Facts':'')+'. Sources : <a href="https://www.lidl.fr" target="_blank" rel="noopener noreferrer">Lidl</a>, <a href="https://www.aldi.fr" target="_blank" rel="noopener noreferrer">Aldi</a>, <a href="https://www.netto.fr" target="_blank" rel="noopener noreferrer">Netto</a>'+(retailCatalog.community_count?' et Open Food Facts (ODbL)':'')+(date?' · synchronisé le '+esc(date):'')+'. <b>Stock et prix de chaque magasin non vérifiés ; certaines offres sont archivées.</b></div>';
 }
 function storesView(){return `<div class="section-head"><div><h2>Magasins, marchés & supérettes</h2><p>Choisissez vos lieux. La liste de courses vous permet ensuite d'assigner chaque article.</p></div><span class="tiny-pill">${chosen().length} sélectionné(s)</span></div><div class="store-priority-note">🏪 <b>Ordre de priorité :</b> Lidl La Destrousse → Aldi La Bouilladisse → Netto La Destrousse. Intermarché reste en option si tu le sélectionnes. Référencement uniquement, pas de stock en temps réel.</div>${retailStatus()}${storeFilters()}${storeCards()}<div class="notice notice-amber" style="margin-top:17px">📅 <b>Marché du jeudi :</b> jeudi 8h–12h, place de la Mairie. <b>Nouveau marché du samedi :</b> à partir du 7 novembre 2026, 8h30–13h. Vérifiez les horaires auprès des commerçants, en particulier les jours fériés.</div>`}
 function modal(){if(!ui.modal)return '';const key=ui.modal,r=DATA.recipes[key];if(!r)return '';const m=mealMacros(key);return `<div class="modal-overlay" data-action="close-modal-overlay"><section class="modal" role="dialog" aria-modal="true" aria-label="${esc(r.name)}"><div class="modal-top"><div><span class="tiny-pill">${esc(r.meal)} · ${esc(r.time)}</span><h2 style="margin-top:12px">${esc(r.name)}</h2><p>Pour <b>1 personne</b> · ≈ ${fmt(m.cal)} kcal · P ${fmt(m.p)} g · G ${fmt(m.c)} g · L ${fmt(m.f)} g</p></div><button class="close" data-action="close-modal" aria-label="Fermer">×</button></div>${r.photo&&state.photos?'<div class="ai-modal-photo">'+mealThumb(key,'ai-modal-img')+'</div>':''}<h3 style="font-size:15px;margin:22px 0 7px">🧺 Ingrédients par personne</h3>${r.items.map(({id,g})=>{const effective=state.subs[id]||id,inf=DATA.ingredients[effective];return `<div class="ingredient-line">${img(effective,src(effective)?'prod-img':'prod-emoji')}<span class="nm">${esc(inf.name)}${id!==effective?` <span class="small muted">(remplacement)</span>`:''}</span><span class="qty">${gram(g,effective)}</span></div>`}).join('')}<div class="step" style="margin-top:19px"><div class="step-title">👩‍🍳 Comment préparer ?</div><p style="margin:0;color:#405f4b">${esc(r.steps)}</p></div><div class="notice" style="margin-top:12px">Pour ${state.people} personnes, multipliez les quantités par ${state.people}. Les produits ont déjà été regroupés dans la liste de courses.</div><div class="modal-footer"><button class="btn btn-light" data-action="close-modal">Fermer</button><button class="btn" data-action="go-shop-from-recipe">Voir la liste →</button></div></section></div>`}
