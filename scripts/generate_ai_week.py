@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Génère une nouvelle semaine de vraies recettes IA et des photos optionnelles.
-À exécuter uniquement sur GitHub Actions : jamais de clé API dans index.html.
+"""Génère un lot de quatre semaines avec un seul appel IA, puis publie depuis le cache.
+Aucune clé API ne doit être placée dans index.html ni dans les JSON publics.
 """
 import base64
 import datetime as dt
@@ -15,6 +15,9 @@ from zoneinfo import ZoneInfo
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LATEST = ROOT / "data/ai/latest.json"
+WEEKS_DIR = ROOT / "data/ai/weeks"
+BATCH_DIR = ROOT / "data/ai/batches"
+BATCH_WEEKS = 4
 MODEL = os.environ.get("AI_TEXT_MODEL", "gpt-5-mini")
 IMAGE_MODEL = os.environ.get("AI_IMAGE_MODEL", "gpt-image-1-mini")
 API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -103,7 +106,7 @@ def generate_recipes(catalogue, week, retail_meta):
         previous = [r.get("name", "") for r in data.get("recipes", {}).values()]
     month = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"][int(week[5:7])-1]
     instructions = (
-        "Tu es cuisinier et diététicien pédagogique. Conçois EXACTEMENT 20 recettes "
+        "Tu es cuisinier et diététicien pédagogique. Conçois EXACTEMENT 32 recettes "
         "originales en français pour une famille qui fait principalement ses courses "
         "en priorité chez Lidl (La Destrousse), puis Aldi (La Bouilladisse), puis "
         "Netto (La Destrousse). Privilégie les produits de base bon marché "
@@ -117,10 +120,12 @@ def generate_recipes(catalogue, week, retail_meta):
         "de préparation concrètes, un temps (ex: '20 min'), et des ingrédients pesés CRUS "
         "en grammes pour UNE personne. Les recettes de la semaine doivent être nouvelles et "
         "différentes des recettes précédentes. Pas de suppléments, médicaments ni d'allégations médicales. "
-        "Retourne exclusivement un objet JSON avec une propriété 'recipes' contenant 20 objets. "
-        "Répartition stricte: 3 Petit-déjeuner, 7 Déjeuner, 3 Collation, 7 Dîner. "
-        "Chaque objet doit avoir seulement les propriétés id (b1/b2/b3, l1..l7, s1..s3, d1..d7), "
+        "Retourne exclusivement un objet JSON avec une propriété 'recipes' contenant 32 objets. "
+        "Ces recettes serviront à 4 semaines de menus successives, sans nouvelle génération. "
+        "Répartition stricte: 5 Petit-déjeuner, 11 Déjeuner, 5 Collation, 11 Dîner. "
+        "Chaque objet doit avoir seulement les propriétés id (b1..b5, l1..l11, s1..s5, d1..d11), "
         "name, meal, time, steps, items; items = tableau d'objets {id,g}. "
+        "Les 32 recettes doivent être suffisamment variées pour quatre semaines. "
         "Chaque id d'ingrédient doit exister dans le catalogue fourni, g est entier >0. "
         "Au moins 3 ingrédients par recette et au maximum 8. "
         "Cuisine accessible, ingrédients de saison en " + month + " et recettes variées. "
@@ -142,7 +147,7 @@ def generate_recipes(catalogue, week, retail_meta):
               if retail_meta.get("documented_ids") else "")}
         ],
         "response_format": {"type": "json_object"},
-        "max_completion_tokens": 16000
+        "max_completion_tokens": 20000
     })
     output = result["choices"][0]["message"]["content"]
     if not output:
@@ -150,10 +155,10 @@ def generate_recipes(catalogue, week, retail_meta):
     return json.loads(output)["recipes"]
 
 def validate(raw, catalogue, week):
-    groups = {"b": ("Petit-déjeuner", 3), "l": ("Déjeuner", 7),
-              "s": ("Collation", 3), "d": ("Dîner", 7)}
-    if not isinstance(raw, list) or len(raw) != 20:
-        raise ValueError("20 recettes sont nécessaires")
+    groups = {"b": ("Petit-déjeuner", 5), "l": ("Déjeuner", 11),
+              "s": ("Collation", 5), "d": ("Dîner", 11)}
+    if not isinstance(raw, list) or len(raw) != 32:
+        raise ValueError("32 recettes sont nécessaires pour préparer les quatre semaines")
     expected = {f"{prefix}{n}" for prefix, (_, count) in groups.items() for n in range(1, count + 1)}
     output = {}
     for rec in raw:
@@ -175,7 +180,7 @@ def validate(raw, catalogue, week):
             if iid not in catalogue or isinstance(qty, bool) or not isinstance(qty, (int, float)) or not 2 <= qty <= 400:
                 raise ValueError(f"Ingrédient/quantité invalide ({rid}): {iid} {qty}")
             normalized.append({"id": iid, "g": round(qty)})
-        key = f"ia-{week}-{rid}"
+        key = f"bank-{week}-{rid}"
         output[key] = {"name": name, "meal": groups[prefix][0],
                        "time": time, "steps": steps, "items": normalized, "source": "ia"}
     if {k.rsplit("-", 1)[-1] for k in output} != expected:
@@ -262,44 +267,106 @@ def make_photo(rec, key, week):
     output.write_bytes(binary)
     return "https://raw.githubusercontent.com/jaycikomo/mon-panier/main/" + output.relative_to(ROOT).as_posix()
 
+def select_week(bank, batch_start, offset):
+    """Prépare 20 recettes adaptées à chaque semaine depuis les mêmes 32 bases.
+
+    Chaque semaine possède ses IDs, ses portions, son menu et ses macros.
+    Aucun appel OpenAI pour les semaines 2, 3 et 4.
+    """
+    import copy
+    week = (dt.date.fromisoformat(batch_start) + dt.timedelta(weeks=offset)).isoformat()
+    sizes = {"b": 3, "l": 7, "s": 3, "d": 7}
+    totals = {"b": 5, "l": 11, "s": 5, "d": 11}
+    selected = {}
+    for kind in ("b", "l", "s", "d"):
+        count, pool = sizes[kind], totals[kind]
+        # Rotation sur des nombres premiers entre eux : les semaines sont variées.
+        step = {"b": 2, "l": 3, "s": 2, "d": 4}[kind]
+        rotation = offset * step
+        for index in range(count):
+            source = f"bank-{batch_start}-{kind}{1 + (index + rotation) % pool}"
+            if source not in bank:
+                raise ValueError("Recette manquante dans le lot : " + source)
+            selected[f"ia-{week}-{kind}{index+1}"] = copy.deepcopy(bank[source])
+    return week, selected
+
+
+def write_json(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def publish_cached_week(week):
+    """Publie la semaine déjà sauvegardée sans vérifier la clé ni appeler l'IA."""
+    saved = WEEKS_DIR / (week + ".json")
+    if not saved.is_file():
+        return False
+    data = json.loads(saved.read_text(encoding="utf-8"))
+    if data.get("week") != week or len(data.get("recipes", {})) != 20:
+        raise ValueError("Semaine enregistrée invalide : " + week)
+    if len(data.get("plan", [])) != 7:
+        raise ValueError("Sept jours de menus attendus dans la sauvegarde : " + week)
+    write_json(LATEST, data)
+    print("Semaine", week, "publiée depuis le lot enregistré ; 0 appel IA.")
+    return True
+
+
 def main():
-    if not API_KEY:
-        raise SystemExit("OPENAI_API_KEY absent : ajouter un secret dans Settings > Secrets and variables > Actions.")
     week = current_monday()
-    if LATEST.exists() and not os.getenv("FORCE", "").lower() in ("1", "true", "yes"):
+    if LATEST.is_file():
         last = json.loads(LATEST.read_text(encoding="utf-8"))
         if last.get("week") == week:
-            print("Recettes de cette semaine déjà disponibles : aucune nouvelle dépense.")
+            print("Semaine", week, "déjà publiée : 0 appel IA.")
             return
+
+    # Le test du cache passe AVANT la vérification du secret OpenAI.
+    if publish_cached_week(week):
+        return
+
+    # Le calendrier du lundi ne consomme de crédits qu'au premier lundi d'un lot.
+    if not API_KEY:
+        raise SystemExit("Nouvelle génération nécessaire mais OPENAI_API_KEY est absent.")
+
     catalogue, retail_meta = retail_inventory(ingredients())
-    # Un seul appel texte à l'IA par semaine : pas de deuxième facture en cas d'erreur.
-    raw = generate_recipes(catalogue, week, retail_meta)
-    recipes = validate(raw, catalogue, week)
-    rebalance_portions(recipes, catalogue)
-    plan, nutrition = build_plan(recipes, catalogue)
-    images_limit = min(2, max(0, int(os.getenv("AI_IMAGE_COUNT", "0"))))
-    if images_limit:
-        # Une photo par dîner utilisé au menu, au plus 7 par semaine.
-        for key in dict.fromkeys(day[3] for day in plan):
-            if images_limit <= 0:
-                break
-            try:
-                recipes[key]["photo"] = make_photo(recipes[key], key, week)
-                images_limit -= 1
-            except Exception as err:
-                print("Photo facultative non créée pour", key, ":", str(err)[:400], file=sys.stderr)
-    data = {"week": week, "generated": dt.datetime.now(dt.timezone.utc).isoformat(),
-            "model": MODEL, "target": TARGET, "retail": retail_meta, "plan": plan,
-            "nutrition": nutrition, "recipes": recipes,
-            "notice": "Macros estimées depuis une table générique d'ingrédients, à vérifier sur les emballages."}
-    week_path = ROOT / "data/ai/weeks" / (week + ".json")
-    week_path.parent.mkdir(parents=True, exist_ok=True)
-    serialized = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
-    week_path.write_text(serialized, encoding="utf-8")
-    LATEST.parent.mkdir(parents=True, exist_ok=True)
-    LATEST.write_text(serialized, encoding="utf-8")
-    print("Semaine IA créée :", week, ", recettes :", len(recipes),
-          ", fourchette kcal :", min(i["kcal"] for i in nutrition), max(i["kcal"] for i in nutrition))
+    raw = generate_recipes(catalogue, week, retail_meta)  # UN SEUL appel facturé
+    bank = validate(raw, catalogue, week)
+    rebalance_portions(bank, catalogue)
+
+    weeks = []
+    for offset in range(BATCH_WEEKS):
+        key, recipes = select_week(bank, week, offset)
+        plan, nutrition = build_plan(recipes, catalogue)
+        weeks.append({
+            "week": key,
+            "generated": dt.datetime.now(dt.timezone.utc).isoformat(),
+            "model": MODEL,
+            "target": TARGET,
+            "retail": retail_meta,
+            "batch_start": week,
+            "batch_week_index": offset + 1,
+            "batch_weeks": BATCH_WEEKS,
+            "plan": plan, "nutrition": nutrition, "recipes": recipes,
+            "notice": "Macros indicatives calculées depuis une table générique ; vérifier les emballages.",
+        })
+
+    # Validation des quatre semaines AVANT d'écrire les fichiers.
+    batch_path = BATCH_DIR / (week + ".json")
+    batch_data = {
+        "start": week, "count": BATCH_WEEKS,
+        "week_keys": [x["week"] for x in weeks],
+        "created": weeks[0]["generated"], "model": MODEL,
+        "recipes_generated": len(bank), "retail": retail_meta,
+        "recipes": bank,
+    }
+    write_json(batch_path, batch_data)
+    for data in weeks:
+        write_json(WEEKS_DIR / (data["week"] + ".json"), data)
+    write_json(LATEST, weeks[0])
+
+    print("Un appel texte IA pour", BATCH_WEEKS, "semaines.",
+          len(bank), "recettes différentes ;", BATCH_WEEKS * 20,
+          "sélections hebdomadaires ; aucune photo générée.")
+    print("Semaines enregistrées :", ", ".join(x["week"] for x in weeks))
 
 if __name__ == "__main__":
     main()
