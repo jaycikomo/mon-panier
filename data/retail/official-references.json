@@ -100,6 +100,69 @@
       "name": "Netto Banane Cavendish",
       "url": "https://www.netto.fr/frais",
       "kind": "listing"
+    },
+    {
+      "store": "aldi",
+      "id": "dinde",
+      "name": "ST-CLÉMENT Escalope de dinde",
+      "url": "https://www.aldi.fr/fiches-produits/escalope-de-dinde-5010284.html",
+      "kind": "product"
+    },
+    {
+      "store": "aldi",
+      "id": "poulet",
+      "name": "ST-CLÉMENT Émincés de filets de poulet",
+      "url": "https://www.aldi.fr/produits/viande-poisson/volaille.html",
+      "kind": "listing"
+    },
+    {
+      "store": "aldi",
+      "id": "brocoli",
+      "name": "ALL SEASONS Brocolis en fleurettes surgelés",
+      "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
+      "kind": "listing"
+    },
+    {
+      "store": "aldi",
+      "id": "haricots",
+      "name": "ALL SEASONS Haricots verts extra fins surgelés",
+      "url": "https://www.aldi.fr/produits/surgeles/fruit-legume.html",
+      "kind": "listing"
+    },
+    {
+      "store": "aldi",
+      "id": "banane",
+      "name": "Bananes Bio Fairtrade Cavendish",
+      "url": "https://www.aldi.fr/fiches-produits/bananes-bio-certifiees-fairtrade-8443.html",
+      "kind": "archived_offer"
+    },
+    {
+      "store": "aldi",
+      "id": "pommesdeterre",
+      "name": "Pommes de terre à chair ferme",
+      "url": "https://www.aldi.fr/",
+      "kind": "archived_offer"
+    },
+    {
+      "store": "netto",
+      "id": "courgette",
+      "name": "Courgettes fraîches (gamme fruits et légumes)",
+      "url": "https://www.netto.fr/frais",
+      "kind": "range"
+    },
+    {
+      "store": "netto",
+      "id": "pomme",
+      "name": "Pommes fraîches (gamme fruits et légumes)",
+      "url": "https://www.netto.fr/frais",
+      "kind": "range"
+    },
+    {
+      "store": "netto",
+      "id": "concombre",
+      "name": "Concombres frais (gamme fruits et légumes)",
+      "url": "https://www.netto.fr/frais",
+      "kind": "range"
     }
   ]
 }
