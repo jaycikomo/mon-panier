@@ -130,6 +130,9 @@ function integrateAI(weekly){
     !weekly.plan.every(day=>Array.isArray(day)&&day.length===4&&day.every(id=>!!merged[id])))return false;
  Object.assign(DATA.recipes,weekly.recipes);
  state.aiRecipes={...(state.aiRecipes||{}),...weekly.recipes};
+ state.aiBatch=Number.isInteger(weekly.batch_week_index)&&Number.isInteger(weekly.batch_weeks)&&
+   weekly.batch_weeks>=1&&weekly.batch_week_index>=1&&weekly.batch_week_index<=weekly.batch_weeks
+   ?{index:weekly.batch_week_index,total:weekly.batch_weeks,start:weekly.batch_start}:null;
  if(state.aiApplied!==weekly.week){
   state.weekPlan=weekly.plan.map(day=>day.slice());
   DATA.plan=state.weekPlan;
@@ -348,11 +351,15 @@ function archivesView(){
 }
 function stats(){return `<div class="stats"><div class="stat"><div class="lab">Objectif calories</div><div class="num">1 900</div><div class="sml">kcal / adulte / jour</div></div><div class="stat"><div class="lab">Protéines visées</div><div class="num">130 g</div><div class="sml">par jour</div></div><div class="stat"><div class="lab">Glucides visés</div><div class="num">180 g</div><div class="sml">par jour</div></div><div class="stat"><div class="lab">Lipides visés</div><div class="num">75 g</div><div class="sml">par jour</div></div></div>`}
 function aiBanner(){
+ const month=state.aiBatch;
+ const weekMessage=month
+   ?'Semaine '+month.index+' sur '+month.total+' du lot sauvegardé · '+(month.index===1?'un lot de 4 semaines préparé en une génération IA.':'recettes actualisées depuis la sauvegarde, sans appel IA cette semaine.')
+   :'20 recettes équilibrées disponibles pour cette semaine.';
  const status=aiStatus==='ready'
-  ?'<strong>✅ Nouvelles recettes IA disponibles !</strong><span>20 recettes pour cette semaine, avec photos des dîners si disponibles.</span>'
+  ?'<strong>✅ Menus de la semaine à jour !</strong><span>'+weekMessage+'</span>'
   :aiStatus==='offline'
    ?'<strong>📡 Impossible de vérifier les recettes IA</strong><span>Vérifiez votre connexion Internet. Les menus habituels restent utilisables.</span>'
-   :'<strong>🤖 Recettes IA non encore publiées</strong><span>Le générateur doit terminer une nouvelle exécution GitHub pour afficher ses recettes. En attendant, tes menus classiques restent disponibles.</span><a class="ai-start-link" href="https://github.com/jaycikomo/mon-panier/actions/workflows/recettes-ia.yml" target="_blank" rel="noopener noreferrer">▶ Lancer la génération sur GitHub : Run workflow → main → Run workflow ↗</a>';
+   :'<strong>🗓️ En attente de publication automatique</strong><span>Chaque lundi, GitHub publie le menu sauvegardé ou crée le prochain lot de 4 semaines. En attendant, les menus habituels restent disponibles.</span><a class="ai-start-link" href="https://github.com/jaycikomo/mon-panier/actions/workflows/recettes-ia.yml" target="_blank" rel="noopener noreferrer">↗ Vérifier le workflow sur GitHub</a>';
  return '<div class="ai-banner">'+status+'</div>';
 }
 function planView(){return `${aiBanner()}${stats()}<div class="spread"><div class="notice">🌱 Menus pour une perte de poids progressive. Les apports sont <b>estimés</b> et peuvent varier selon les marques, les cuissons et les substitutions.</div><button class="btn btn-light" data-action="goto" data-tab="courses">Voir les courses →</button></div>${cardsPlan()}`}
