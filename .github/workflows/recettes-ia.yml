@@ -32,8 +32,13 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Vérifier la syntaxe du générateur
-        run: python -m py_compile scripts/generate_ai_week.py
+      - name: Vérifier les scripts
+        run: python -m py_compile scripts/generate_ai_week.py scripts/sync_store_catalog.py
+      - name: Préparer le catalogue sans IA s'il manque
+        run: |
+          if [ ! -f data/retail/catalog.json ]; then
+            python scripts/sync_store_catalog.py
+          fi
       - name: Vérifier la configuration de l'IA
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -55,6 +60,7 @@ jobs:
           git config user.name "mon-panier-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/ai
+          if [ -f data/retail/catalog.json ]; then git add data/retail/catalog.json; fi
           if [ -d images/ia ]; then git add images/ia; fi
           if git diff --cached --quiet; then
             echo "Aucune modification à publier."
