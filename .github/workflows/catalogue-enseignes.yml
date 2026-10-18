@@ -1,6 +1,11 @@
 name: Mon Panier - Catalogue Lidl Aldi Netto (sans IA)
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/sync_store_catalog.py'
+      - '.github/workflows/catalogue-enseignes.yml'
   schedule:
     # Le dimanche : catalogue actualisé avant la génération IA du lundi.
     - cron: '20 5 * * 0'
@@ -31,8 +36,8 @@ jobs:
       - name: Publier le catalogue
         run: |
           if [ ! -f data/retail/catalog.json ]; then
-            echo "Aucun nouveau catalogue exploitable ; anciens produits préservés."
-            exit 0
+            echo "::error::Catalogue non récupéré : Open Food Facts indisponible. Aucun token IA consommé."
+            exit 1
           fi
           git config user.name "mon-panier-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
