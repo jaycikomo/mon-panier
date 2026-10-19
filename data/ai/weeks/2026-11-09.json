@@ -1,0 +1,664 @@
+{
+  "week": "2026-11-09",
+  "generated": "2026-10-19T11:11:58.274785+00:00",
+  "model": "gpt-5-mini",
+  "target": {
+    "p": 130,
+    "c": 180,
+    "f": 75,
+    "cal": 1915
+  },
+  "retail": {
+    "mode": "fallback",
+    "matches": 6,
+    "documented_ids": [
+      "avoine",
+      "dinde",
+      "huile",
+      "riz",
+      "skyr",
+      "thon"
+    ],
+    "reason": "Référencement incomplet"
+  },
+  "batch_start": "2026-10-19",
+  "batch_week_index": 4,
+  "batch_weeks": 4,
+  "plan": [
+    [
+      "ia-2026-11-09-b3",
+      "ia-2026-11-09-l6",
+      "ia-2026-11-09-s3",
+      "ia-2026-11-09-d6"
+    ],
+    [
+      "ia-2026-11-09-b1",
+      "ia-2026-11-09-l2",
+      "ia-2026-11-09-s1",
+      "ia-2026-11-09-d3"
+    ],
+    [
+      "ia-2026-11-09-b1",
+      "ia-2026-11-09-l7",
+      "ia-2026-11-09-s1",
+      "ia-2026-11-09-d5"
+    ],
+    [
+      "ia-2026-11-09-b1",
+      "ia-2026-11-09-l4",
+      "ia-2026-11-09-s1",
+      "ia-2026-11-09-d1"
+    ],
+    [
+      "ia-2026-11-09-b1",
+      "ia-2026-11-09-l5",
+      "ia-2026-11-09-s3",
+      "ia-2026-11-09-d7"
+    ],
+    [
+      "ia-2026-11-09-b1",
+      "ia-2026-11-09-l3",
+      "ia-2026-11-09-s3",
+      "ia-2026-11-09-d2"
+    ],
+    [
+      "ia-2026-11-09-b1",
+      "ia-2026-11-09-l1",
+      "ia-2026-11-09-s1",
+      "ia-2026-11-09-d4"
+    ]
+  ],
+  "nutrition": [
+    {
+      "kcal": 1910,
+      "proteines": 132
+    },
+    {
+      "kcal": 1912,
+      "proteines": 128
+    },
+    {
+      "kcal": 1914,
+      "proteines": 129
+    },
+    {
+      "kcal": 1912,
+      "proteines": 130
+    },
+    {
+      "kcal": 1912,
+      "proteines": 130
+    },
+    {
+      "kcal": 1912,
+      "proteines": 121
+    },
+    {
+      "kcal": 1905,
+      "proteines": 114
+    }
+  ],
+  "recipes": {
+    "ia-2026-11-09-b1": {
+      "name": "Omelette tomate-épinards et pain complet",
+      "meal": "Petit-déjeuner",
+      "time": "12 min",
+      "steps": "Battre les œufs avec une pincée d'épices. Poêler les épinards et tomates 2-3 min à l'huile, verser les œufs et cuire l'omelette selon l'épaisseur désirée. Servir avec une tranche de pain complet grillée.",
+      "items": [
+        {
+          "id": "oeufs",
+          "g": 123
+        },
+        {
+          "id": "epinards",
+          "g": 51
+        },
+        {
+          "id": "tomate",
+          "g": 82
+        },
+        {
+          "id": "pain",
+          "g": 61
+        },
+        {
+          "id": "huile",
+          "g": 10
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-b2": {
+      "name": "Tartine purée de cacahuète, skyr et pomme",
+      "meal": "Petit-déjeuner",
+      "time": "8 min",
+      "steps": "Tartiner le pain complet de purée de cacahuète. Servir avec des tranches de pomme et un bol de skyr à côté. Mélanger si désiré le skyr avec un filet de citron pour relever.",
+      "items": [
+        {
+          "id": "pain",
+          "g": 70
+        },
+        {
+          "id": "beurrecacahuete",
+          "g": 20
+        },
+        {
+          "id": "pomme",
+          "g": 151
+        },
+        {
+          "id": "skyr",
+          "g": 101
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-b3": {
+      "name": "Muesli croustillant au fromage blanc et noix",
+      "meal": "Petit-déjeuner",
+      "time": "5 min",
+      "steps": "Verser le fromage blanc dans un bol. Ajouter le muesli sans sucres et les fruits rouges surgelés encore partiellement décongelés. Parsemer de noix concassées et déguster.",
+      "items": [
+        {
+          "id": "fromageblanc",
+          "g": 192
+        },
+        {
+          "id": "muesli",
+          "g": 58
+        },
+        {
+          "id": "fruitsrouges",
+          "g": 77
+        },
+        {
+          "id": "noix",
+          "g": 14
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-l1": {
+      "name": "Riz sauté au poulet, carotte et haricots verts",
+      "meal": "Déjeuner",
+      "time": "25 min",
+      "steps": "Cuire le riz sec et réserver. Saisir des lanières de poulet, ajouter carotte en julienne et haricots verts et cuire 5-7 min. Incorporer le riz, assaisonner et faire sauter 2-3 min pour lier les saveurs.",
+      "items": [
+        {
+          "id": "riz",
+          "g": 82
+        },
+        {
+          "id": "poulet",
+          "g": 144
+        },
+        {
+          "id": "carotte",
+          "g": 82
+        },
+        {
+          "id": "haricots",
+          "g": 82
+        },
+        {
+          "id": "huile",
+          "g": 10
+        },
+        {
+          "id": "epices",
+          "g": 3
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-l2": {
+      "name": "Pommes de terre rôties et sardines à la salade",
+      "meal": "Déjeuner",
+      "time": "35 min",
+      "steps": "Rôtir les pommes de terre en quartiers 30-35 min au four avec un filet d'huile. Disposer les sardines égouttées sur un lit de salade et concombre. Servir les pommes de terre encore chaudes à côté et arroser d'huile et citron.",
+      "items": [
+        {
+          "id": "pommesdeterre",
+          "g": 241
+        },
+        {
+          "id": "sardines",
+          "g": 144
+        },
+        {
+          "id": "salade",
+          "g": 96
+        },
+        {
+          "id": "concombre",
+          "g": 72
+        },
+        {
+          "id": "huile",
+          "g": 10
+        },
+        {
+          "id": "citron",
+          "g": 6
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-l3": {
+      "name": "Salade de riz au thon, avocat et crudités",
+      "meal": "Déjeuner",
+      "time": "25 min",
+      "steps": "Cuire le riz basmati sec selon les indications (environ 12 min) et laisser tiédir. Mélanger le riz avec le thon égoutté, l'avocat en dés, tomates et concombre. Assaisonner avec huile, citron et épices puis servir frais.",
+      "items": [
+        {
+          "id": "riz",
+          "g": 77
+        },
+        {
+          "id": "thon",
+          "g": 115
+        },
+        {
+          "id": "avocat",
+          "g": 48
+        },
+        {
+          "id": "tomate",
+          "g": 96
+        },
+        {
+          "id": "concombre",
+          "g": 77
+        },
+        {
+          "id": "huile",
+          "g": 10
+        },
+        {
+          "id": "citron",
+          "g": 10
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-l4": {
+      "name": "Blanc de poulet rôti, pommes de terre et brocoli",
+      "meal": "Déjeuner",
+      "time": "40 min",
+      "steps": "Enfourner le blanc de poulet arrosé d'huile et d'épices à 200°C pendant 20-25 min. Couper les pommes de terre en cubes et rôtir 25-30 min au four avec un filet d'huile. Cuire le brocoli à la vapeur 6-8 min et assembler l'assiette.",
+      "items": [
+        {
+          "id": "poulet",
+          "g": 196
+        },
+        {
+          "id": "pommesdeterre",
+          "g": 261
+        },
+        {
+          "id": "brocoli",
+          "g": 156
+        },
+        {
+          "id": "huile",
+          "g": 13
+        },
+        {
+          "id": "epices",
+          "g": 7
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-l5": {
+      "name": "Pâtes complètes tièdes à la dinde et courgette",
+      "meal": "Déjeuner",
+      "time": "25 min",
+      "steps": "Cuire les pâtes complètes al dente selon le paquet. Saisir l'escalope de dinde coupée en lanières puis ajouter des rondelles de courgette et tomates pour 5-6 min. Mélanger aux pâtes, arroser d'huile d'olive et servir tiède sur un lit de salade.",
+      "items": [
+        {
+          "id": "pates",
+          "g": 88
+        },
+        {
+          "id": "dinde",
+          "g": 153
+        },
+        {
+          "id": "courgette",
+          "g": 109
+        },
+        {
+          "id": "tomate",
+          "g": 88
+        },
+        {
+          "id": "salade",
+          "g": 66
+        },
+        {
+          "id": "huile",
+          "g": 9
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-l6": {
+      "name": "Quinoa aux sardines, avocat et salade verte",
+      "meal": "Déjeuner",
+      "time": "20 min",
+      "steps": "Cuire le quinoa sec selon les indications (environ 12 min). Égoutter les sardines et émietter sur le quinoa tiède, ajouter l'avocat en dés et la salade. Assaisonner d'huile d'olive, citron et poivre.",
+      "items": [
+        {
+          "id": "quinoa",
+          "g": 59
+        },
+        {
+          "id": "sardines",
+          "g": 101
+        },
+        {
+          "id": "avocat",
+          "g": 50
+        },
+        {
+          "id": "salade",
+          "g": 67
+        },
+        {
+          "id": "huile",
+          "g": 8
+        },
+        {
+          "id": "citron",
+          "g": 8
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-l7": {
+      "name": "Tartine villageoise pain complet, œuf dur et thon",
+      "meal": "Déjeuner",
+      "time": "15 min",
+      "steps": "Cuire les œufs 9-10 min pour qu'ils soient durs, puis les refroidir et couper en tranches. Sur du pain complet toasté, disposer le thon émietté, tranches d'œuf et concombre. Assaisonner d'huile, sel et poivre et servir avec une salade.",
+      "items": [
+        {
+          "id": "pain",
+          "g": 105
+        },
+        {
+          "id": "oeufs",
+          "g": 116
+        },
+        {
+          "id": "thon",
+          "g": 93
+        },
+        {
+          "id": "concombre",
+          "g": 70
+        },
+        {
+          "id": "salade",
+          "g": 47
+        },
+        {
+          "id": "huile",
+          "g": 6
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-s1": {
+      "name": "Fromage blanc, muesli et fruits rouges",
+      "meal": "Collation",
+      "time": "3 min",
+      "steps": "Mettre le fromage blanc dans un bol. Ajouter le muesli et les fruits rouges surgelés. Remuer rapidement et consommer frais.",
+      "items": [
+        {
+          "id": "fromageblanc",
+          "g": 165
+        },
+        {
+          "id": "muesli",
+          "g": 33
+        },
+        {
+          "id": "fruitsrouges",
+          "g": 66
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-s2": {
+      "name": "Tartine purée de cacahuète et pomme",
+      "meal": "Collation",
+      "time": "5 min",
+      "steps": "Tartiner le pain complet de purée de cacahuète. Servir avec une pomme croquante en tranches. Simple et rassasiant pour un goûter rapide.",
+      "items": [
+        {
+          "id": "pain",
+          "g": 43
+        },
+        {
+          "id": "beurrecacahuete",
+          "g": 12
+        },
+        {
+          "id": "pomme",
+          "g": 92
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-s3": {
+      "name": "Yaourt grec, noix et banane",
+      "meal": "Collation",
+      "time": "3 min",
+      "steps": "Verser le yaourt grec dans un bol. Ajouter la banane en rondelles et parsemer de noix concassées. Mélanger légèrement et déguster.",
+      "items": [
+        {
+          "id": "yaourtgrec",
+          "g": 93
+        },
+        {
+          "id": "noix",
+          "g": 12
+        },
+        {
+          "id": "banane",
+          "g": 50
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-d1": {
+      "name": "Saumon poêlé, riz basmati et épinards à l'ail",
+      "meal": "Dîner",
+      "time": "25 min",
+      "steps": "Cuire le riz sec selon le paquet. Poêler le saumon 3-4 min par face. Sauter rapidement les épinards avec un peu d'huile et d'épices puis servir avec le riz et le saumon.",
+      "items": [
+        {
+          "id": "saumon",
+          "g": 135
+        },
+        {
+          "id": "riz",
+          "g": 72
+        },
+        {
+          "id": "epinards",
+          "g": 108
+        },
+        {
+          "id": "huile",
+          "g": 9
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-d2": {
+      "name": "Escalope de dinde, pâtes complètes et courgettes",
+      "meal": "Dîner",
+      "time": "30 min",
+      "steps": "Cuire les pâtes complètes al dente. Saisir la dinde en tranches puis ajouter courgettes en dés pour 5-7 min. Mélanger aux pâtes, rectifier l'assaisonnement et servir chaud.",
+      "items": [
+        {
+          "id": "dinde",
+          "g": 175
+        },
+        {
+          "id": "pates",
+          "g": 94
+        },
+        {
+          "id": "courgette",
+          "g": 140
+        },
+        {
+          "id": "huile",
+          "g": 9
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-d3": {
+      "name": "Steak haché aux légumineuses rapides (quinoa) et haricots verts",
+      "meal": "Dîner",
+      "time": "30 min",
+      "steps": "Cuire le quinoa sec puis l'aérer à la fourchette. Cuire le steak haché 5-6 min selon la cuisson désirée. Servir avec des haricots verts vapeur et arroser d'un filet d'huile.",
+      "items": [
+        {
+          "id": "steak",
+          "g": 157
+        },
+        {
+          "id": "quinoa",
+          "g": 84
+        },
+        {
+          "id": "haricots",
+          "g": 125
+        },
+        {
+          "id": "huile",
+          "g": 8
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-d4": {
+      "name": "Tofu rôti au four, patate douce et brocoli vapeur",
+      "meal": "Dîner",
+      "time": "35 min",
+      "steps": "Couper le tofu en cubes et le rôtir 20-25 min au four avec un filet d'huile. Rôtir la patate douce en parallèle et cuire le brocoli à la vapeur. Assembler et assaisonner d'épices avant de servir.",
+      "items": [
+        {
+          "id": "tofu",
+          "g": 192
+        },
+        {
+          "id": "patatedouce",
+          "g": 256
+        },
+        {
+          "id": "brocoli",
+          "g": 128
+        },
+        {
+          "id": "huile",
+          "g": 10
+        },
+        {
+          "id": "epices",
+          "g": 4
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-d5": {
+      "name": "Pâtes et sardines, sauce tomate rustique",
+      "meal": "Dîner",
+      "time": "20 min",
+      "steps": "Cuire les pâtes complètes al dente. Pendant ce temps, émietter les sardines et les réchauffer doucement avec des dés de tomate et un filet d'huile. Mélanger la sauce aux pâtes et servir avec de la salade verte.",
+      "items": [
+        {
+          "id": "pates",
+          "g": 80
+        },
+        {
+          "id": "sardines",
+          "g": 119
+        },
+        {
+          "id": "tomate",
+          "g": 119
+        },
+        {
+          "id": "salade",
+          "g": 60
+        },
+        {
+          "id": "huile",
+          "g": 8
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-d6": {
+      "name": "Steak de thon poêlé, pommes de terre vapeur et épinards",
+      "meal": "Dîner",
+      "time": "20 min",
+      "steps": "Saisir le thon à la poêle 2-3 min par face pour une cuisson mi-saignante. Cuire les pommes de terre à l'eau ou vapeur et les épinards sautés rapidement. Assaisonner et servir le thon sur les pommes de terre avec les épinards.",
+      "items": [
+        {
+          "id": "thon",
+          "g": 221
+        },
+        {
+          "id": "pommesdeterre",
+          "g": 294
+        },
+        {
+          "id": "epinards",
+          "g": 177
+        },
+        {
+          "id": "huile",
+          "g": 12
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-11-09-d7": {
+      "name": "Poulet rôti, quinoa et carottes glacées",
+      "meal": "Dîner",
+      "time": "40 min",
+      "steps": "Rôtir le blanc de poulet au four avec un filet d'huile et épices 25-30 min. Cuire le quinoa sec et glacer les carottes en les poêlant légèrement avec un peu d'huile. Servir le poulet sur un lit de quinoa avec les carottes.",
+      "items": [
+        {
+          "id": "poulet",
+          "g": 164
+        },
+        {
+          "id": "quinoa",
+          "g": 82
+        },
+        {
+          "id": "carotte",
+          "g": 123
+        },
+        {
+          "id": "huile",
+          "g": 10
+        },
+        {
+          "id": "epices",
+          "g": 3
+        }
+      ],
+      "source": "ia"
+    }
+  },
+  "notice": "Macros indicatives calculées depuis une table générique ; vérifier les emballages."
+}

@@ -1,0 +1,672 @@
+{
+  "week": "2026-10-26",
+  "generated": "2026-10-19T11:11:58.262614+00:00",
+  "model": "gpt-5-mini",
+  "target": {
+    "p": 130,
+    "c": 180,
+    "f": 75,
+    "cal": 1915
+  },
+  "retail": {
+    "mode": "fallback",
+    "matches": 6,
+    "documented_ids": [
+      "avoine",
+      "dinde",
+      "huile",
+      "riz",
+      "skyr",
+      "thon"
+    ],
+    "reason": "Référencement incomplet"
+  },
+  "batch_start": "2026-10-19",
+  "batch_week_index": 2,
+  "batch_weeks": 4,
+  "plan": [
+    [
+      "ia-2026-10-26-b1",
+      "ia-2026-10-26-l1",
+      "ia-2026-10-26-s2",
+      "ia-2026-10-26-d3"
+    ],
+    [
+      "ia-2026-10-26-b1",
+      "ia-2026-10-26-l2",
+      "ia-2026-10-26-s3",
+      "ia-2026-10-26-d5"
+    ],
+    [
+      "ia-2026-10-26-b2",
+      "ia-2026-10-26-l6",
+      "ia-2026-10-26-s3",
+      "ia-2026-10-26-d4"
+    ],
+    [
+      "ia-2026-10-26-b2",
+      "ia-2026-10-26-l5",
+      "ia-2026-10-26-s3",
+      "ia-2026-10-26-d2"
+    ],
+    [
+      "ia-2026-10-26-b2",
+      "ia-2026-10-26-l4",
+      "ia-2026-10-26-s3",
+      "ia-2026-10-26-d6"
+    ],
+    [
+      "ia-2026-10-26-b2",
+      "ia-2026-10-26-l3",
+      "ia-2026-10-26-s3",
+      "ia-2026-10-26-d1"
+    ],
+    [
+      "ia-2026-10-26-b3",
+      "ia-2026-10-26-l7",
+      "ia-2026-10-26-s2",
+      "ia-2026-10-26-d7"
+    ]
+  ],
+  "nutrition": [
+    {
+      "kcal": 1911,
+      "proteines": 130
+    },
+    {
+      "kcal": 1917,
+      "proteines": 126
+    },
+    {
+      "kcal": 1918,
+      "proteines": 127
+    },
+    {
+      "kcal": 1920,
+      "proteines": 118
+    },
+    {
+      "kcal": 1918,
+      "proteines": 118
+    },
+    {
+      "kcal": 1914,
+      "proteines": 104
+    },
+    {
+      "kcal": 1910,
+      "proteines": 112
+    }
+  ],
+  "recipes": {
+    "ia-2026-10-26-b1": {
+      "name": "Tartine purée de cacahuète, skyr et pomme",
+      "meal": "Petit-déjeuner",
+      "time": "8 min",
+      "steps": "Tartiner le pain complet de purée de cacahuète. Servir avec des tranches de pomme et un bol de skyr à côté. Mélanger si désiré le skyr avec un filet de citron pour relever.",
+      "items": [
+        {
+          "id": "pain",
+          "g": 70
+        },
+        {
+          "id": "beurrecacahuete",
+          "g": 20
+        },
+        {
+          "id": "pomme",
+          "g": 151
+        },
+        {
+          "id": "skyr",
+          "g": 101
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-b2": {
+      "name": "Muesli croustillant au fromage blanc et noix",
+      "meal": "Petit-déjeuner",
+      "time": "5 min",
+      "steps": "Verser le fromage blanc dans un bol. Ajouter le muesli sans sucres et les fruits rouges surgelés encore partiellement décongelés. Parsemer de noix concassées et déguster.",
+      "items": [
+        {
+          "id": "fromageblanc",
+          "g": 192
+        },
+        {
+          "id": "muesli",
+          "g": 58
+        },
+        {
+          "id": "fruitsrouges",
+          "g": 77
+        },
+        {
+          "id": "noix",
+          "g": 14
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-b3": {
+      "name": "Smoothie bowl yaourt grec, banane et avoine",
+      "meal": "Petit-déjeuner",
+      "time": "7 min",
+      "steps": "Mixer le yaourt grec avec la banane et une partie des fruits rouges jusqu'à consistance lisse. Verser dans un bol puis saupoudrer d'avoine et d'amandes. Ajouter un trait de citron si vous aimez plus acidulé.",
+      "items": [
+        {
+          "id": "yaourtgrec",
+          "g": 137
+        },
+        {
+          "id": "banane",
+          "g": 59
+        },
+        {
+          "id": "fruitsrouges",
+          "g": 78
+        },
+        {
+          "id": "avoine",
+          "g": 39
+        },
+        {
+          "id": "amandes",
+          "g": 10
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-l1": {
+      "name": "Quinoa aux sardines, avocat et salade verte",
+      "meal": "Déjeuner",
+      "time": "20 min",
+      "steps": "Cuire le quinoa sec selon les indications (environ 12 min). Égoutter les sardines et émietter sur le quinoa tiède, ajouter l'avocat en dés et la salade. Assaisonner d'huile d'olive, citron et poivre.",
+      "items": [
+        {
+          "id": "quinoa",
+          "g": 59
+        },
+        {
+          "id": "sardines",
+          "g": 101
+        },
+        {
+          "id": "avocat",
+          "g": 50
+        },
+        {
+          "id": "salade",
+          "g": 67
+        },
+        {
+          "id": "huile",
+          "g": 8
+        },
+        {
+          "id": "citron",
+          "g": 8
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-l2": {
+      "name": "Tartine villageoise pain complet, œuf dur et thon",
+      "meal": "Déjeuner",
+      "time": "15 min",
+      "steps": "Cuire les œufs 9-10 min pour qu'ils soient durs, puis les refroidir et couper en tranches. Sur du pain complet toasté, disposer le thon émietté, tranches d'œuf et concombre. Assaisonner d'huile, sel et poivre et servir avec une salade.",
+      "items": [
+        {
+          "id": "pain",
+          "g": 105
+        },
+        {
+          "id": "oeufs",
+          "g": 116
+        },
+        {
+          "id": "thon",
+          "g": 93
+        },
+        {
+          "id": "concombre",
+          "g": 70
+        },
+        {
+          "id": "salade",
+          "g": 47
+        },
+        {
+          "id": "huile",
+          "g": 6
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-l3": {
+      "name": "Bol patate douce, tofu rôti et brocoli",
+      "meal": "Déjeuner",
+      "time": "35 min",
+      "steps": "Couper la patate douce en dés et rôtir 25-30 min au four avec un filet d'huile et épices. Saisir le tofu ferme en cubes jusqu'à coloration. Disposer patate douce, tofu et brocoli vapeur dans un bol et arroser d'un filet d'huile.",
+      "items": [
+        {
+          "id": "patatedouce",
+          "g": 246
+        },
+        {
+          "id": "tofu",
+          "g": 185
+        },
+        {
+          "id": "brocoli",
+          "g": 123
+        },
+        {
+          "id": "huile",
+          "g": 10
+        },
+        {
+          "id": "epices",
+          "g": 4
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-l4": {
+      "name": "Steak haché, riz basmati et courgettes grillées",
+      "meal": "Déjeuner",
+      "time": "25 min",
+      "steps": "Former et cuire le steak haché 5% à la poêle 3-4 min par face. Cuire le riz sec selon le paquet. Griller des rondelles de courgette à la poêle et servir avec le steak et le riz chaud.",
+      "items": [
+        {
+          "id": "steak",
+          "g": 170
+        },
+        {
+          "id": "riz",
+          "g": 79
+        },
+        {
+          "id": "courgette",
+          "g": 136
+        },
+        {
+          "id": "huile",
+          "g": 9
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-l5": {
+      "name": "Saumon poêlé, quinoa et épinards poêlés",
+      "meal": "Déjeuner",
+      "time": "25 min",
+      "steps": "Cuire le quinoa sec selon les indications. Saisir le filet de saumon 3-4 min par face à la poêle avec un peu d'huile. Faire revenir les épinards 2-3 min et assembler le tout avec un filet de citron.",
+      "items": [
+        {
+          "id": "saumon",
+          "g": 134
+        },
+        {
+          "id": "quinoa",
+          "g": 67
+        },
+        {
+          "id": "epinards",
+          "g": 77
+        },
+        {
+          "id": "huile",
+          "g": 8
+        },
+        {
+          "id": "citron",
+          "g": 5
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-l6": {
+      "name": "Omelette légumes et cottage, pain complet",
+      "meal": "Déjeuner",
+      "time": "15 min",
+      "steps": "Battre les œufs et verser dans une poêle chaude avec un filet d'huile. Ajouter courgette et tomate en dés puis plier l'omelette. Servir avec du cottage cheese et une tranche de pain complet.",
+      "items": [
+        {
+          "id": "oeufs",
+          "g": 144
+        },
+        {
+          "id": "courgette",
+          "g": 120
+        },
+        {
+          "id": "tomate",
+          "g": 96
+        },
+        {
+          "id": "cottage",
+          "g": 96
+        },
+        {
+          "id": "pain",
+          "g": 72
+        },
+        {
+          "id": "huile",
+          "g": 10
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-l7": {
+      "name": "Riz sauté au poulet, carotte et haricots verts",
+      "meal": "Déjeuner",
+      "time": "25 min",
+      "steps": "Cuire le riz sec et réserver. Saisir des lanières de poulet, ajouter carotte en julienne et haricots verts et cuire 5-7 min. Incorporer le riz, assaisonner et faire sauter 2-3 min pour lier les saveurs.",
+      "items": [
+        {
+          "id": "riz",
+          "g": 82
+        },
+        {
+          "id": "poulet",
+          "g": 144
+        },
+        {
+          "id": "carotte",
+          "g": 82
+        },
+        {
+          "id": "haricots",
+          "g": 82
+        },
+        {
+          "id": "huile",
+          "g": 10
+        },
+        {
+          "id": "epices",
+          "g": 3
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-s1": {
+      "name": "Tartine purée de cacahuète et pomme",
+      "meal": "Collation",
+      "time": "5 min",
+      "steps": "Tartiner le pain complet de purée de cacahuète. Servir avec une pomme croquante en tranches. Simple et rassasiant pour un goûter rapide.",
+      "items": [
+        {
+          "id": "pain",
+          "g": 43
+        },
+        {
+          "id": "beurrecacahuete",
+          "g": 12
+        },
+        {
+          "id": "pomme",
+          "g": 92
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-s2": {
+      "name": "Yaourt grec, noix et banane",
+      "meal": "Collation",
+      "time": "3 min",
+      "steps": "Verser le yaourt grec dans un bol. Ajouter la banane en rondelles et parsemer de noix concassées. Mélanger légèrement et déguster.",
+      "items": [
+        {
+          "id": "yaourtgrec",
+          "g": 93
+        },
+        {
+          "id": "noix",
+          "g": 12
+        },
+        {
+          "id": "banane",
+          "g": 50
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-s3": {
+      "name": "Cottage aux crudités et petite tranche de pain",
+      "meal": "Collation",
+      "time": "5 min",
+      "steps": "Servir le cottage cheese dans un bol. Ajouter concombre et tomate en dés, assaisonner d'un filet d'huile et d'épices. Accompagner d'une petite tranche de pain complet.",
+      "items": [
+        {
+          "id": "cottage",
+          "g": 111
+        },
+        {
+          "id": "concombre",
+          "g": 74
+        },
+        {
+          "id": "tomate",
+          "g": 74
+        },
+        {
+          "id": "pain",
+          "g": 30
+        },
+        {
+          "id": "huile",
+          "g": 4
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-d1": {
+      "name": "Tofu rôti au four, patate douce et brocoli vapeur",
+      "meal": "Dîner",
+      "time": "35 min",
+      "steps": "Couper le tofu en cubes et le rôtir 20-25 min au four avec un filet d'huile. Rôtir la patate douce en parallèle et cuire le brocoli à la vapeur. Assembler et assaisonner d'épices avant de servir.",
+      "items": [
+        {
+          "id": "tofu",
+          "g": 192
+        },
+        {
+          "id": "patatedouce",
+          "g": 256
+        },
+        {
+          "id": "brocoli",
+          "g": 128
+        },
+        {
+          "id": "huile",
+          "g": 10
+        },
+        {
+          "id": "epices",
+          "g": 4
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-d2": {
+      "name": "Pâtes et sardines, sauce tomate rustique",
+      "meal": "Dîner",
+      "time": "20 min",
+      "steps": "Cuire les pâtes complètes al dente. Pendant ce temps, émietter les sardines et les réchauffer doucement avec des dés de tomate et un filet d'huile. Mélanger la sauce aux pâtes et servir avec de la salade verte.",
+      "items": [
+        {
+          "id": "pates",
+          "g": 80
+        },
+        {
+          "id": "sardines",
+          "g": 119
+        },
+        {
+          "id": "tomate",
+          "g": 119
+        },
+        {
+          "id": "salade",
+          "g": 60
+        },
+        {
+          "id": "huile",
+          "g": 8
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-d3": {
+      "name": "Steak de thon poêlé, pommes de terre vapeur et épinards",
+      "meal": "Dîner",
+      "time": "20 min",
+      "steps": "Saisir le thon à la poêle 2-3 min par face pour une cuisson mi-saignante. Cuire les pommes de terre à l'eau ou vapeur et les épinards sautés rapidement. Assaisonner et servir le thon sur les pommes de terre avec les épinards.",
+      "items": [
+        {
+          "id": "thon",
+          "g": 221
+        },
+        {
+          "id": "pommesdeterre",
+          "g": 294
+        },
+        {
+          "id": "epinards",
+          "g": 177
+        },
+        {
+          "id": "huile",
+          "g": 12
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-d4": {
+      "name": "Poulet rôti, quinoa et carottes glacées",
+      "meal": "Dîner",
+      "time": "40 min",
+      "steps": "Rôtir le blanc de poulet au four avec un filet d'huile et épices 25-30 min. Cuire le quinoa sec et glacer les carottes en les poêlant légèrement avec un peu d'huile. Servir le poulet sur un lit de quinoa avec les carottes.",
+      "items": [
+        {
+          "id": "poulet",
+          "g": 164
+        },
+        {
+          "id": "quinoa",
+          "g": 82
+        },
+        {
+          "id": "carotte",
+          "g": 123
+        },
+        {
+          "id": "huile",
+          "g": 10
+        },
+        {
+          "id": "epices",
+          "g": 3
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-d5": {
+      "name": "Galette de saumon maison et pommes de terre au four",
+      "meal": "Dîner",
+      "time": "35 min",
+      "steps": "Mixer légèrement le saumon puis former une galette et la cuire à la poêle 4-5 min par face. Couper les pommes de terre en quartiers et rôtir 30-35 min au four avec de l'huile et des épices. Servir la galette avec les pommes de terre et une portion de salade.",
+      "items": [
+        {
+          "id": "saumon",
+          "g": 170
+        },
+        {
+          "id": "pommesdeterre",
+          "g": 218
+        },
+        {
+          "id": "salade",
+          "g": 73
+        },
+        {
+          "id": "huile",
+          "g": 12
+        },
+        {
+          "id": "epices",
+          "g": 4
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-d6": {
+      "name": "Omelette grecque : œufs, feta et tomate, pain complet",
+      "meal": "Dîner",
+      "time": "15 min",
+      "steps": "Battre les œufs et verser dans une poêle chaude. Ajouter des morceaux de feta et tomates et cuire doucement jusqu'à prise. Servir l'omelette avec une tranche de pain complet grillée.",
+      "items": [
+        {
+          "id": "oeufs",
+          "g": 162
+        },
+        {
+          "id": "feta",
+          "g": 54
+        },
+        {
+          "id": "tomate",
+          "g": 86
+        },
+        {
+          "id": "pain",
+          "g": 65
+        },
+        {
+          "id": "huile",
+          "g": 9
+        }
+      ],
+      "source": "ia"
+    },
+    "ia-2026-10-26-d7": {
+      "name": "Sauté de dinde, riz basmati et brocoli-carotte",
+      "meal": "Dîner",
+      "time": "25 min",
+      "steps": "Cuire le riz sec selon le paquet. Saisir la dinde en petits morceaux puis ajouter brocoli et carotte en bâtonnets pour 5-7 min. Mélanger au riz et assaisonner avec huile et épices avant de servir chaud.",
+      "items": [
+        {
+          "id": "dinde",
+          "g": 159
+        },
+        {
+          "id": "riz",
+          "g": 85
+        },
+        {
+          "id": "brocoli",
+          "g": 106
+        },
+        {
+          "id": "carotte",
+          "g": 85
+        },
+        {
+          "id": "huile",
+          "g": 8
+        },
+        {
+          "id": "epices",
+          "g": 3
+        }
+      ],
+      "source": "ia"
+    }
+  },
+  "notice": "Macros indicatives calculées depuis une table générique ; vérifier les emballages."
+}
