@@ -3,7 +3,7 @@
   "source_url": "https://world.openfoodfacts.org",
   "license": "ODbL-1.0 pour les seules fiches Open Food Facts",
   "disclaimer": "Références observées en ligne (dont offres anciennes). Aucun stock local ni prix actuel garanti.",
-  "updated": "2026-10-18T18:40:24.471801+00:00",
+  "updated": "2026-10-25T09:50:03.554139+00:00",
   "official_reviewed": "2026-10-18",
   "priority": [
     "lidl",
@@ -11,7 +11,7 @@
     "netto"
   ],
   "official_count": 8,
-  "community_count": 0,
+  "community_count": 40,
   "stores": {
     "lidl": [
       {
@@ -53,6 +53,216 @@
         "source": "Site officiel",
         "kind": "product",
         "reviewed": "2026-10-18"
+      },
+      {
+        "name": "Sardines Huile d'Olive Vierge Extra",
+        "brand": "PARMENTIER",
+        "ean": "3019081238643",
+        "ingredients": [
+          "huile"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3019081238643",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Beurre de cacahuètes",
+        "brand": "LIDL",
+        "ean": "4056489620938",
+        "ingredients": [
+          "cacahuetes"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4056489620938",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Noix de cajou non salées",
+        "brand": "Alesto",
+        "ean": "20267605",
+        "ingredients": [
+          "noix"
+        ],
+        "url": "https://world.openfoodfacts.org/product/20267605",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Bio crackers graines de chia et flocons d’avoine",
+        "brand": "Lidl",
+        "ean": "4056489546092",
+        "ingredients": [
+          "avoine"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4056489546092",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Sauce Tomate concentrée cuisinée aux petits légumes",
+        "brand": "Panzani",
+        "ean": "3038359004544",
+        "ingredients": [
+          "tomate"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3038359004544",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Mélange de Noix & Fruits Secs",
+        "brand": "Alesto",
+        "ean": "20815394",
+        "ingredients": [
+          "noix"
+        ],
+        "url": "https://world.openfoodfacts.org/product/20815394",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Sauce Tomate Napolitaine",
+        "brand": "Combino",
+        "ean": "20023218",
+        "ingredients": [
+          "tomate"
+        ],
+        "url": "https://world.openfoodfacts.org/product/20023218",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Sardines | A L'Huile D'Olive Vierge Extra",
+        "brand": "Nixe",
+        "ean": "20703622",
+        "ingredients": [
+          "huile"
+        ],
+        "url": "https://world.openfoodfacts.org/product/20703622",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Compote pommes allégée en sucres",
+        "brand": "Freshona",
+        "ean": "4056489027768",
+        "ingredients": [
+          "pomme"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4056489027768",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Coleslaw, choux blanc et carottes",
+        "brand": "Saladinettes",
+        "ean": "20638757",
+        "ingredients": [
+          "carotte"
+        ],
+        "url": "https://world.openfoodfacts.org/product/20638757",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Cashew Nuts noix de cajou XXL",
+        "brand": "",
+        "ean": "40893532",
+        "ingredients": [
+          "noix"
+        ],
+        "url": "https://world.openfoodfacts.org/product/40893532",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Shot de Mangue, gingembre, citron vert",
+        "brand": "Solevita",
+        "ean": "4056489791799",
+        "ingredients": [
+          "citron"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4056489791799",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Bio Beurre de Cacahuète Crunchy",
+        "brand": "Marbel",
+        "ean": "4335619022607",
+        "ingredients": [
+          "beurrecacahuete"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4335619022607",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Flocons d'avoine sans gluten",
+        "brand": "Terres Et Cereales",
+        "ean": "3421557501524",
+        "ingredients": [
+          "avoine"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3421557501524",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Saumon Fumé",
+        "brand": "LIDL",
+        "ean": "4056489530268",
+        "ingredients": [
+          "saumon"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4056489530268",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Purée d'amandes blanches",
+        "brand": "Maribel",
+        "ean": "4056489658825",
+        "ingredients": [
+          "amandes"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4056489658825",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Purée d'amandes complètes bio",
+        "brand": "Maribel",
+        "ean": "4056489664536",
+        "ingredients": [
+          "amandes"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4056489664536",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Amandes de Californie décortiquées",
+        "brand": "Belbake, Navarre",
+        "ean": "20052713",
+        "ingredients": [
+          "amandes"
+        ],
+        "url": "https://world.openfoodfacts.org/product/20052713",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "arachides grillées",
+        "brand": "Alesto",
+        "ean": "4056489745563",
+        "ingredients": [
+          "cacahuetes"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4056489745563",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Bio sauce tomate arrabbiata",
+        "brand": "Combino",
+        "ean": "4056489848509",
+        "ingredients": [
+          "tomate"
+        ],
+        "url": "https://world.openfoodfacts.org/product/4056489848509",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Truite fumée de france",
+        "brand": "OVIVE",
+        "ean": "3392780004871",
+        "ingredients": [
+          "truite"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3392780004871",
+        "source": "Open Food Facts"
       }
     ],
     "aldi": [
@@ -97,7 +307,199 @@
         "reviewed": "2026-10-18"
       }
     ],
-    "netto": []
+    "netto": [
+      {
+        "name": "Taboulé oriental à l'huile d'olive vierge extra",
+        "brand": "Pierre Martinet",
+        "ean": "3281780893892",
+        "ingredients": [
+          "huile"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3281780893892",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Sandwich le méga baguette thon oeuf sauce cocktail",
+        "brand": "Sodebo",
+        "ean": "3242272922056",
+        "ingredients": [
+          "oeufs"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3242272922056",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Huile d'olive Vierge Extra 75cl Bio",
+        "brand": "Netto",
+        "ean": "3250392543259",
+        "ingredients": [
+          "huile"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250392543259",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Huile d'olive vierge extra 50 cl",
+        "brand": "Netto",
+        "ean": "3250391499410",
+        "ingredients": [
+          "huile"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250391499410",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Eau avec jus citron ondine 50cl",
+        "brand": "Ondine",
+        "ean": "3250392887469",
+        "ingredients": [
+          "citron"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250392887469",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Netto pain complet prec crc/300g",
+        "brand": "Netto",
+        "ean": "3250393443800",
+        "ingredients": [
+          "pain"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250393443800",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Noix de pécan grillées et salées",
+        "brand": "Netto",
+        "ean": "3250393438141",
+        "ingredients": [
+          "noix"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250393438141",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Oeufs",
+        "brand": "Netto",
+        "ean": "3250391699520",
+        "ingredients": [
+          "oeufs"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250391699520",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Pommes rissolées 1kg",
+        "brand": "Netto",
+        "ean": "3410280005089",
+        "ingredients": [
+          "pomme"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3410280005089",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "YAOURT AUX FRUITS 0% 12X125G - Fraise / mûre / pêche / ananas / cerise / citron",
+        "brand": "Netto",
+        "ean": "3250393053139",
+        "ingredients": [
+          "citron"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250393053139",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "YAOURT AU LAIT ENTIER POT VERRE 4X125G- saveur citron",
+        "brand": "Netto",
+        "ean": "3250391345311",
+        "ingredients": [
+          "citron"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250391345311",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Eau gazeuse aromatisee citron vert select netto 1,25l",
+        "brand": "Netto, vernet",
+        "ean": "3250393411083",
+        "ingredients": [
+          "citron"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250393411083",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "GOURDES Compote de pommes allégée en sucres - 12 x 90 g",
+        "brand": "Netto",
+        "ean": "3250393406881",
+        "ingredients": [
+          "pomme"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250393406881",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Jus de Tomate",
+        "brand": "Netto",
+        "ean": "3250391464722",
+        "ingredients": [
+          "tomate"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250391464722",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "YAOURT AROMATISE 16X125G - fruits des bois, noix de coco, framboise, abricot, banane, fraise",
+        "brand": "Netto",
+        "ean": "3250392151287",
+        "ingredients": [
+          "banane",
+          "noix"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250392151287",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Petits pois extra fins carottes - 720 ml",
+        "brand": "Kerlys, Netto",
+        "ean": "3250392292119",
+        "ingredients": [
+          "carotte"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250392292119",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Saumon fumé Norvège salé au sel sec",
+        "brand": "Netto",
+        "ean": "3250391294176",
+        "ingredients": [
+          "saumon"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250391294176",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Pommes Frites 9/9 2,5kg",
+        "brand": "Netto",
+        "ean": "3250390176107",
+        "ingredients": [
+          "pomme"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250390176107",
+        "source": "Open Food Facts"
+      },
+      {
+        "name": "Vinaigre vin blanc aromatisé noix",
+        "brand": "Netto",
+        "ean": "3250391374908",
+        "ingredients": [
+          "noix"
+        ],
+        "url": "https://world.openfoodfacts.org/product/3250391374908",
+        "source": "Open Food Facts"
+      }
+    ]
   },
   "evidence": {
     "skyr": {
@@ -159,10 +561,129 @@
           "source": "Site officiel",
           "kind": "product",
           "reviewed": "2026-10-18"
+        },
+        {
+          "name": "Sardines Huile d'Olive Vierge Extra",
+          "brand": "PARMENTIER",
+          "ean": "3019081238643",
+          "url": "https://world.openfoodfacts.org/product/3019081238643",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Sardines | A L'Huile D'Olive Vierge Extra",
+          "brand": "Nixe",
+          "ean": "20703622",
+          "url": "https://world.openfoodfacts.org/product/20703622",
+          "source": "Open Food Facts"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Taboulé oriental à l'huile d'olive vierge extra",
+          "brand": "Pierre Martinet",
+          "ean": "3281780893892",
+          "url": "https://world.openfoodfacts.org/product/3281780893892",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Huile d'olive Vierge Extra 75cl Bio",
+          "brand": "Netto",
+          "ean": "3250392543259",
+          "url": "https://world.openfoodfacts.org/product/3250392543259",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Huile d'olive vierge extra 50 cl",
+          "brand": "Netto",
+          "ean": "3250391499410",
+          "url": "https://world.openfoodfacts.org/product/3250391499410",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "cacahuetes": {
+      "lidl": [
+        {
+          "name": "Beurre de cacahuètes",
+          "brand": "LIDL",
+          "ean": "4056489620938",
+          "url": "https://world.openfoodfacts.org/product/4056489620938",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "arachides grillées",
+          "brand": "Alesto",
+          "ean": "4056489745563",
+          "url": "https://world.openfoodfacts.org/product/4056489745563",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "noix": {
+      "lidl": [
+        {
+          "name": "Noix de cajou non salées",
+          "brand": "Alesto",
+          "ean": "20267605",
+          "url": "https://world.openfoodfacts.org/product/20267605",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Mélange de Noix & Fruits Secs",
+          "brand": "Alesto",
+          "ean": "20815394",
+          "url": "https://world.openfoodfacts.org/product/20815394",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Cashew Nuts noix de cajou XXL",
+          "brand": "",
+          "ean": "40893532",
+          "url": "https://world.openfoodfacts.org/product/40893532",
+          "source": "Open Food Facts"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Noix de pécan grillées et salées",
+          "brand": "Netto",
+          "ean": "3250393438141",
+          "url": "https://world.openfoodfacts.org/product/3250393438141",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "YAOURT AROMATISE 16X125G - fruits des bois, noix de coco, framboise, abricot, banane, fraise",
+          "brand": "Netto",
+          "ean": "3250392151287",
+          "url": "https://world.openfoodfacts.org/product/3250392151287",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Vinaigre vin blanc aromatisé noix",
+          "brand": "Netto",
+          "ean": "3250391374908",
+          "url": "https://world.openfoodfacts.org/product/3250391374908",
+          "source": "Open Food Facts"
         }
       ]
     },
     "avoine": {
+      "lidl": [
+        {
+          "name": "Bio crackers graines de chia et flocons d’avoine",
+          "brand": "Lidl",
+          "ean": "4056489546092",
+          "url": "https://world.openfoodfacts.org/product/4056489546092",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Flocons d'avoine sans gluten",
+          "brand": "Terres Et Cereales",
+          "ean": "3421557501524",
+          "url": "https://world.openfoodfacts.org/product/3421557501524",
+          "source": "Open Food Facts"
+        }
+      ],
       "aldi": [
         {
           "name": "GOLDEN BRIDGE Flocons d’avoine",
@@ -170,6 +691,202 @@
           "source": "Site officiel",
           "kind": "product",
           "reviewed": "2026-10-18"
+        }
+      ]
+    },
+    "tomate": {
+      "lidl": [
+        {
+          "name": "Sauce Tomate concentrée cuisinée aux petits légumes",
+          "brand": "Panzani",
+          "ean": "3038359004544",
+          "url": "https://world.openfoodfacts.org/product/3038359004544",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Sauce Tomate Napolitaine",
+          "brand": "Combino",
+          "ean": "20023218",
+          "url": "https://world.openfoodfacts.org/product/20023218",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Bio sauce tomate arrabbiata",
+          "brand": "Combino",
+          "ean": "4056489848509",
+          "url": "https://world.openfoodfacts.org/product/4056489848509",
+          "source": "Open Food Facts"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Jus de Tomate",
+          "brand": "Netto",
+          "ean": "3250391464722",
+          "url": "https://world.openfoodfacts.org/product/3250391464722",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "pomme": {
+      "lidl": [
+        {
+          "name": "Compote pommes allégée en sucres",
+          "brand": "Freshona",
+          "ean": "4056489027768",
+          "url": "https://world.openfoodfacts.org/product/4056489027768",
+          "source": "Open Food Facts"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Pommes rissolées 1kg",
+          "brand": "Netto",
+          "ean": "3410280005089",
+          "url": "https://world.openfoodfacts.org/product/3410280005089",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "GOURDES Compote de pommes allégée en sucres - 12 x 90 g",
+          "brand": "Netto",
+          "ean": "3250393406881",
+          "url": "https://world.openfoodfacts.org/product/3250393406881",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Pommes Frites 9/9 2,5kg",
+          "brand": "Netto",
+          "ean": "3250390176107",
+          "url": "https://world.openfoodfacts.org/product/3250390176107",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "carotte": {
+      "lidl": [
+        {
+          "name": "Coleslaw, choux blanc et carottes",
+          "brand": "Saladinettes",
+          "ean": "20638757",
+          "url": "https://world.openfoodfacts.org/product/20638757",
+          "source": "Open Food Facts"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Petits pois extra fins carottes - 720 ml",
+          "brand": "Kerlys, Netto",
+          "ean": "3250392292119",
+          "url": "https://world.openfoodfacts.org/product/3250392292119",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "citron": {
+      "lidl": [
+        {
+          "name": "Shot de Mangue, gingembre, citron vert",
+          "brand": "Solevita",
+          "ean": "4056489791799",
+          "url": "https://world.openfoodfacts.org/product/4056489791799",
+          "source": "Open Food Facts"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Eau avec jus citron ondine 50cl",
+          "brand": "Ondine",
+          "ean": "3250392887469",
+          "url": "https://world.openfoodfacts.org/product/3250392887469",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "YAOURT AUX FRUITS 0% 12X125G - Fraise / mûre / pêche / ananas / cerise / citron",
+          "brand": "Netto",
+          "ean": "3250393053139",
+          "url": "https://world.openfoodfacts.org/product/3250393053139",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "YAOURT AU LAIT ENTIER POT VERRE 4X125G- saveur citron",
+          "brand": "Netto",
+          "ean": "3250391345311",
+          "url": "https://world.openfoodfacts.org/product/3250391345311",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Eau gazeuse aromatisee citron vert select netto 1,25l",
+          "brand": "Netto, vernet",
+          "ean": "3250393411083",
+          "url": "https://world.openfoodfacts.org/product/3250393411083",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "beurrecacahuete": {
+      "lidl": [
+        {
+          "name": "Bio Beurre de Cacahuète Crunchy",
+          "brand": "Marbel",
+          "ean": "4335619022607",
+          "url": "https://world.openfoodfacts.org/product/4335619022607",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "saumon": {
+      "lidl": [
+        {
+          "name": "Saumon Fumé",
+          "brand": "LIDL",
+          "ean": "4056489530268",
+          "url": "https://world.openfoodfacts.org/product/4056489530268",
+          "source": "Open Food Facts"
+        }
+      ],
+      "netto": [
+        {
+          "name": "Saumon fumé Norvège salé au sel sec",
+          "brand": "Netto",
+          "ean": "3250391294176",
+          "url": "https://world.openfoodfacts.org/product/3250391294176",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "amandes": {
+      "lidl": [
+        {
+          "name": "Purée d'amandes blanches",
+          "brand": "Maribel",
+          "ean": "4056489658825",
+          "url": "https://world.openfoodfacts.org/product/4056489658825",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Purée d'amandes complètes bio",
+          "brand": "Maribel",
+          "ean": "4056489664536",
+          "url": "https://world.openfoodfacts.org/product/4056489664536",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Amandes de Californie décortiquées",
+          "brand": "Belbake, Navarre",
+          "ean": "20052713",
+          "url": "https://world.openfoodfacts.org/product/20052713",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "truite": {
+      "lidl": [
+        {
+          "name": "Truite fumée de france",
+          "brand": "OVIVE",
+          "ean": "3392780004871",
+          "url": "https://world.openfoodfacts.org/product/3392780004871",
+          "source": "Open Food Facts"
         }
       ]
     },
@@ -183,19 +900,70 @@
           "reviewed": "2026-10-18"
         }
       ]
+    },
+    "oeufs": {
+      "netto": [
+        {
+          "name": "Sandwich le méga baguette thon oeuf sauce cocktail",
+          "brand": "Sodebo",
+          "ean": "3242272922056",
+          "url": "https://world.openfoodfacts.org/product/3242272922056",
+          "source": "Open Food Facts"
+        },
+        {
+          "name": "Oeufs",
+          "brand": "Netto",
+          "ean": "3250391699520",
+          "url": "https://world.openfoodfacts.org/product/3250391699520",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "pain": {
+      "netto": [
+        {
+          "name": "Netto pain complet prec crc/300g",
+          "brand": "Netto",
+          "ean": "3250393443800",
+          "url": "https://world.openfoodfacts.org/product/3250393443800",
+          "source": "Open Food Facts"
+        }
+      ]
+    },
+    "banane": {
+      "netto": [
+        {
+          "name": "YAOURT AROMATISE 16X125G - fruits des bois, noix de coco, framboise, abricot, banane, fraise",
+          "brand": "Netto",
+          "ean": "3250392151287",
+          "url": "https://world.openfoodfacts.org/product/3250392151287",
+          "source": "Open Food Facts"
+        }
+      ]
     }
   },
   "matched_ingredients": [
+    "amandes",
     "avoine",
+    "banane",
+    "beurrecacahuete",
+    "cacahuetes",
+    "carotte",
+    "citron",
     "dinde",
     "huile",
+    "noix",
+    "oeufs",
+    "pain",
+    "pomme",
     "riz",
+    "saumon",
     "skyr",
-    "thon"
+    "thon",
+    "tomate",
+    "truite"
   ],
   "errors": [
-    "lidl: HTTP Error 503: Service Temporarily Unavailable",
-    "aldi: HTTP Error 503: Service Temporarily Unavailable",
-    "netto: HTTP Error 503: Service Temporarily Unavailable"
+    "aldi: HTTP Error 503: Service Temporarily Unavailable"
   ]
 }
