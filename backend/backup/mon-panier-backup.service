@@ -1,0 +1,15 @@
+[Unit]
+Description=Mon Panier - sauvegarde verifiee PostgreSQL
+Wants=docker.service
+After=docker.service
+ConditionPathExists=/opt/mon-panier/compose.yaml
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+EnvironmentFile=-/etc/mon-panier-backup.env
+ExecStart=/usr/local/sbin/mon-panier-backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
