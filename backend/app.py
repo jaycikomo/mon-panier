@@ -2,6 +2,11 @@
 from __future__ import annotations
 
 import hashlib
+import logging
+import smtplib
+import ssl
+from email.message import EmailMessage
+from urllib.parse import urlencode
 import hmac
 import os
 import secrets
@@ -12,7 +17,7 @@ from uuid import UUID
 import jwt
 import psycopg
 from argon2 import PasswordHasher, exceptions as argon_errors
-from fastapi import Depends, FastAPI, Header, HTTPException, Path, Query
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, EmailStr, Field
@@ -33,6 +38,18 @@ app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_methods=["GET", 
 bearer = HTTPBearer(auto_error=False)
 hasher = PasswordHasher()
 MealType = Literal["breakfast", "lunch", "dinner", "snack"]
+SMTP_HOST = os.environ.get("PANIER_SMTP_HOST", "").strip()
+SMTP_PORT = int(os.environ.get("PANIER_SMTP_PORT", "587"))
+SMTP_USER = os.environ.get("PANIER_SMTP_USER", "").strip()
+SMTP_PASSWORD = os.environ.get("PANIER_SMTP_PASSWORD", "")
+SMTP_FROM = os.environ.get("PANIER_SMTP_FROM", "").strip()
+RESET_URL = os.environ.get("PANIER_RESET_URL", "https://jaycikomo.github.io/mon-panier/")
+MAIL_CONFIGURED = bool(SMTP_HOST and SMTP_USER and SMTP_PASSWORD and SMTP_FROM and
+                       RESET_URL.startswith("https://") and
+                       RESET_URL.startswith(("https://jaycikomo.github.io/mon-panier/",
+                                              "https://82.66.229.233/essai-famille")))
+logger = logging.getLogger("mon-panier")
+
 
 
 def db():
@@ -48,9 +65,54 @@ def normalize_email(email: str) -> str:
 
 
 def issue_token(account_id: UUID) -> str:
+    with db() as conn:
+        account = conn.execute(
+            "SELECT auth_revision FROM accounts WHERE id=%s", (account_id,)).fetchone()
+    if not account:
+        error(401, "Compte introuvable")
     now = datetime.now(timezone.utc)
-    return jwt.encode({"sub": str(account_id), "iat": now, "exp": now + timedelta(days=7)},
+    return jwt.encode({"sub": str(account_id), "iat": now, "ver": account["auth_revision"],
+                       "exp": now + timedelta(minutes=15)},
                       JWT_SECRET, algorithm="HS256")
+
+
+def token_digest(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def issue_session(conn, account_id: UUID) -> dict:
+    """Rotateable 60-day refresh session; only its SHA-256 digest reaches PostgreSQL."""
+    refresh = secrets.token_urlsafe(48)
+    conn.execute(
+        """INSERT INTO auth_sessions(token_hash, account_id, expires_at)
+           VALUES (%s,%s,now()+interval '60 days')""",
+        (token_digest(refresh), account_id))
+    return {"access_token": issue_token(account_id), "refresh_token": refresh,
+            "expires_in": 15 * 60}
+
+
+def send_password_reset_email(recipient: str, url: str):
+    try:
+        message = EmailMessage()
+        message["From"] = SMTP_FROM
+        message["To"] = recipient
+        message["Subject"] = "Mon Panier - reinitialisation de votre mot de passe"
+        message.set_content(
+            "Vous avez demande un nouveau mot de passe Mon Panier.\n\n"
+            "Le lien suivant est valable pendant 30 minutes et une seule fois :\n"
+            + url + "\n\nSi vous n'etes pas a l'origine de cette demande, ignorez ce message.")
+        if SMTP_PORT == 465:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=12,
+                                  context=ssl.create_default_context()) as smtp:
+                smtp.login(SMTP_USER, SMTP_PASSWORD)
+                smtp.send_message(message)
+        else:
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=12) as smtp:
+                smtp.starttls(context=ssl.create_default_context())
+                smtp.login(SMTP_USER, SMTP_PASSWORD)
+                smtp.send_message(message)
+    except (OSError, smtplib.SMTPException):
+        logger.exception("Echec envoi e-mail de reinitialisation Mon Panier")
 
 
 def actor(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
@@ -58,7 +120,13 @@ def actor(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
         error(401, "Authentification nécessaire")
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=["HS256"])
-        return UUID(payload["sub"])
+        account_id = UUID(payload["sub"])
+        with db() as conn:
+            account = conn.execute(
+                "SELECT auth_revision FROM accounts WHERE id=%s", (account_id,)).fetchone()
+        if not account or int(payload.get("ver", 0)) != account["auth_revision"]:
+            error(401, "Session invalidee : reconnectez-vous")
+        return account_id
     except (jwt.PyJWTError, ValueError, KeyError):
         error(401, "Session expirée ou invalide")
 
@@ -106,6 +174,30 @@ class Shopping(BaseModel):
     expected_version: int | None = Field(default=None, ge=0)
 
 
+class RefreshRequest(BaseModel):
+    refresh_token: str = Field(min_length=30, max_length=200)
+
+
+class ChangePassword(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=12, max_length=128)
+
+
+class ResetRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetConfirm(BaseModel):
+    token: str = Field(min_length=32, max_length=200)
+    new_password: str = Field(min_length=12, max_length=128)
+
+
+class FamilyMenu(BaseModel):
+    plan: list[list[str]] = Field(min_length=7, max_length=7)
+    recipes: dict[str, dict] = Field(min_length=1, max_length=60)
+    expected_version: int = Field(default=0, ge=0)
+
+
 class Ingredient(BaseModel):
     id: str = Field(min_length=1, max_length=100)
     g: float = Field(ge=0, le=10000)
@@ -141,6 +233,12 @@ class Favorite(BaseModel):
 class WeeklyArchive(BaseModel):
     plan: list[list[str]] = Field(min_length=7, max_length=7)
     recipes: dict[str, dict] = Field(min_length=1, max_length=60)
+    completed_recipes: list[str] = Field(default_factory=list, max_length=60)
+    starred_recipes: list[str] = Field(default_factory=list, max_length=60)
+
+
+class RecipeProgress(BaseModel):
+    is_done: bool
 
 
 class Pantry(BaseModel):
@@ -179,7 +277,9 @@ def bootstrap(data: Bootstrap, x_bootstrap_token: str = Header(alias="X-Bootstra
         conn.execute(
             "INSERT INTO household_members(household_id,account_id,role) VALUES (%s,%s,'owner')",
             (family["id"], account["id"]))
-    return {"access_token": issue_token(account["id"]), "household_id": family["id"]}
+    with db() as conn:
+        session = issue_session(conn, account["id"])
+    return {**session, "household_id": family["id"]}
 
 
 @app.post("/api/login")
@@ -194,7 +294,104 @@ def login(data: Login):
             hasher.verify(account["password_hash"], data.password)
         except (argon_errors.VerificationError, argon_errors.InvalidHashError):
             error(401, "Identifiants incorrects")
-    return {"access_token": issue_token(account["id"]), "display_name": account["display_name"]}
+        session = issue_session(conn, account["id"])
+    return {**session, "display_name": account["display_name"]}
+
+
+@app.post("/api/session/refresh")
+def refresh_session(data: RefreshRequest):
+    digest = token_digest(data.refresh_token)
+    with db() as conn:
+        existing = conn.execute(
+            """SELECT account_id FROM auth_sessions
+               WHERE token_hash=%s AND revoked_at IS NULL AND expires_at>now()
+               FOR UPDATE""",
+            (digest,)).fetchone()
+        if not existing:
+            error(401, "Session expiree : reconnectez-vous")
+        conn.execute(
+            "UPDATE auth_sessions SET revoked_at=now(),last_used_at=now() WHERE token_hash=%s",
+            (digest,))
+        return issue_session(conn, existing["account_id"])
+
+
+@app.post("/api/session/logout")
+def logout_session(data: RefreshRequest):
+    with db() as conn:
+        conn.execute(
+            "UPDATE auth_sessions SET revoked_at=now() WHERE token_hash=%s",
+            (token_digest(data.refresh_token),))
+    return {"revoked": True}
+
+
+@app.post("/api/password/change")
+def change_password(data: ChangePassword, account_id: UUID = Depends(actor)):
+    with db() as conn:
+        account = conn.execute(
+            "SELECT password_hash FROM accounts WHERE id=%s FOR UPDATE",
+            (account_id,)).fetchone()
+        if not account:
+            error(401, "Compte introuvable")
+        try:
+            hasher.verify(account["password_hash"], data.current_password)
+        except (argon_errors.VerificationError, argon_errors.InvalidHashError):
+            error(403, "Mot de passe actuel incorrect")
+        conn.execute(
+            "UPDATE accounts SET password_hash=%s,auth_revision=auth_revision+1 WHERE id=%s",
+            (hasher.hash(data.new_password), account_id))
+        conn.execute(
+            "UPDATE auth_sessions SET revoked_at=now() WHERE account_id=%s AND revoked_at IS NULL",
+            (account_id,))
+    return {"changed": True, "relogin_required": True}
+
+
+@app.post("/api/password-reset/request", status_code=202)
+def request_reset(data: ResetRequest, background_tasks: BackgroundTasks):
+    """No account enumeration and no plaintext reset token storage."""
+    if not MAIL_CONFIGURED:
+        error(503, "Recuperation par e-mail indisponible : serveur SMTP non configure")
+    email = normalize_email(data.email)
+    with db() as conn:
+        account = conn.execute(
+            "SELECT id FROM accounts WHERE email=%s", (email,)).fetchone()
+        if account:
+            recent = conn.execute(
+                """SELECT 1 FROM password_reset_tokens
+                   WHERE account_id=%s AND created_at>now()-interval '15 minutes'""",
+                (account["id"],)).fetchone()
+            if not recent:
+                token = secrets.token_urlsafe(48)
+                conn.execute(
+                    """INSERT INTO password_reset_tokens(token_hash,account_id,expires_at)
+                       VALUES (%s,%s,now()+interval '30 minutes')""",
+                    (token_digest(token), account["id"]))
+                # Fragment : le code ne transite pas dans les journaux HTTP de l'hebergeur web.
+                url = RESET_URL.split("#")[0] + "#" + urlencode({"reset": token})
+                background_tasks.add_task(send_password_reset_email, email, url)
+    return {"message": "Si cette adresse appartient a un compte, un lien va etre envoye."}
+
+
+@app.post("/api/password-reset/confirm")
+def confirm_reset(data: ResetConfirm):
+    digest = token_digest(data.token)
+    with db() as conn:
+        row = conn.execute(
+            """SELECT account_id FROM password_reset_tokens
+               WHERE token_hash=%s AND used_at IS NULL AND expires_at>now()
+               FOR UPDATE""",
+            (digest,)).fetchone()
+        if not row:
+            error(400, "Ce lien de recuperation est invalide ou expire")
+        conn.execute(
+            "UPDATE accounts SET password_hash=%s WHERE id=%s",
+            (hasher.hash(data.new_password), row["account_id"]))
+        conn.execute(
+            "UPDATE password_reset_tokens SET used_at=now() WHERE token_hash=%s",
+            (digest,))
+        conn.execute(
+            "UPDATE auth_sessions SET revoked_at=now() WHERE account_id=%s AND revoked_at IS NULL",
+            (row["account_id"],))
+    return {"changed": True, "relogin_required": True}
 
 
 @app.get("/api/me")
@@ -256,8 +453,9 @@ def join(data: Join):
             "INSERT INTO household_members(household_id,account_id,role) VALUES (%s,%s,'member')",
             (invite_row["household_id"], account["id"]))
         conn.execute("UPDATE invitations SET used_at=now() WHERE token_hash=%s", (digest,))
-    return {"access_token": issue_token(account["id"]),
-            "household_id": invite_row["household_id"]}
+    with db() as conn:
+        session = issue_session(conn, account["id"])
+    return {**session, "household_id": invite_row["household_id"]}
 
 
 @app.get("/api/households/{hid}/snapshot")
@@ -283,11 +481,14 @@ def snapshot(hid: UUID, week: date, account_id: UUID = Depends(actor)):
         favorites = conn.execute(
             "SELECT recipe_key,starred FROM favorite_recipes WHERE household_id=%s",
             (hid,)).fetchall()
+        progress = conn.execute(
+            "SELECT recipe_key,is_done FROM weekly_recipe_progress WHERE household_id=%s AND week_key=%s",
+            (hid, week)).fetchall()
         latest = conn.execute(
             "SELECT COALESCE(max(id),0) AS id FROM sync_events WHERE household_id=%s",
             (hid,)).fetchone()["id"]
     return {"shopping": shopping, "recipes": recipes, "plans": plans,
-            "consumed": consumed, "pantry": pantry, "favorites": favorites,
+            "consumed": consumed, "pantry": pantry, "favorites": favorites, "progress": progress,
             "last_event_id": latest}
 
 
@@ -359,6 +560,89 @@ def delete_shopping(hid: UUID, week: date, key: str, account_id: UUID = Depends(
     return {"deleted": bool(deleted)}
 
 
+@app.get("/api/households/{hid}/week-menus/{week}")
+def get_family_menu(hid: UUID, week: date, account_id: UUID = Depends(actor)):
+    with db() as conn:
+        member(conn, hid, account_id)
+        row = conn.execute(
+            """SELECT week_key,plan,recipes,version,updated_at
+               FROM family_week_menus WHERE household_id=%s AND week_key=%s""",
+            (hid, week)).fetchone()
+    return {"menu": row}
+
+
+@app.put("/api/households/{hid}/week-menus/{week}")
+def set_family_menu(hid: UUID, week: date, data: FamilyMenu,
+                    account_id: UUID = Depends(actor)):
+    if week.weekday() != 0 or any(len(day) != 4 for day in data.plan):
+        error(422, "Un menu familial commence un lundi et comprend quatre repas par jour")
+    if any(key not in data.recipes for day in data.plan for key in day):
+        error(422, "Recettes manquantes dans le menu familial")
+    with db() as conn:
+        member(conn, hid, account_id)
+        old = conn.execute(
+            """SELECT version FROM family_week_menus
+               WHERE household_id=%s AND week_key=%s FOR UPDATE""",
+            (hid, week)).fetchone()
+        if old and old["version"] != data.expected_version:
+            error(409, "Le menu familial a change depuis un autre telephone")
+        if not old and data.expected_version != 0:
+            error(409, "Le menu familial est introuvable : actualiser")
+        if old:
+            row = conn.execute(
+                """UPDATE family_week_menus
+                   SET plan=%s,recipes=%s,version=version+1,
+                       updated_by=%s,updated_at=now()
+                   WHERE household_id=%s AND week_key=%s
+                   RETURNING week_key,plan,recipes,version,updated_at""",
+                (Jsonb(data.plan), Jsonb(data.recipes), account_id, hid, week)).fetchone()
+        else:
+            row = conn.execute(
+                """INSERT INTO family_week_menus(household_id,week_key,plan,recipes,updated_by)
+                   VALUES (%s,%s,%s,%s,%s)
+                   ON CONFLICT (household_id,week_key) DO NOTHING
+                   RETURNING week_key,plan,recipes,version,updated_at""",
+                (hid, week, Jsonb(data.plan), Jsonb(data.recipes), account_id)).fetchone()
+            if not row:
+                error(409, "Le menu familial vient d'etre publie par un autre appareil")
+        # On conserve aussi les semaines precedentes meme sans ouverture des telephones.
+        conn.execute(
+            """INSERT INTO weekly_recipe_archives
+               (household_id,week_key,plan,recipes,archived_by,completed_recipes,starred_recipes)
+               SELECT fm.household_id,fm.week_key,fm.plan,fm.recipes,fm.updated_by,
+                      COALESCE((SELECT jsonb_agg(p.recipe_key) FROM weekly_recipe_progress p
+                                WHERE p.household_id=fm.household_id AND p.week_key=fm.week_key
+                                  AND p.is_done), '[]'::jsonb),
+                      COALESCE((SELECT jsonb_agg(f.recipe_key) FROM favorite_recipes f
+                                WHERE f.household_id=fm.household_id AND f.starred
+                                  AND jsonb_exists(fm.recipes,f.recipe_key)), '[]'::jsonb)
+               FROM family_week_menus fm WHERE fm.household_id=%s AND fm.week_key<%s
+               ON CONFLICT (household_id,week_key) DO NOTHING""",
+            (hid, week))
+        event(conn, hid, account_id, "weekly-menu.changed",
+              {"week": week.isoformat(), "version": row["version"]})
+    return {"menu": row}
+
+
+@app.put("/api/households/{hid}/recipe-progress/{week}/{key}")
+def update_recipe_progress(hid: UUID, week: date, key: str, data: RecipeProgress,
+                           account_id: UUID = Depends(actor)):
+    if not 1 <= len(key) <= 100 or week.weekday() != 0:
+        error(422, "Recette ou semaine invalide")
+    with db() as conn:
+        member(conn, hid, account_id)
+        conn.execute(
+            """INSERT INTO weekly_recipe_progress
+               (household_id,week_key,recipe_key,is_done,updated_by)
+               VALUES (%s,%s,%s,%s,%s)
+               ON CONFLICT (household_id,week_key,recipe_key) DO UPDATE SET
+               is_done=EXCLUDED.is_done,updated_by=EXCLUDED.updated_by,updated_at=now()""",
+            (hid, week, key, data.is_done, account_id))
+        event(conn, hid, account_id, "recipe-progress.changed",
+              {"week": week.isoformat(), "key": key, "is_done": data.is_done})
+    return {"saved": True, "recipe_key": key, "is_done": data.is_done}
+
+
 @app.put("/api/households/{hid}/favorites/{key}")
 def set_favorite(hid: UUID, key: str, data: Favorite,
                  account_id: UUID = Depends(actor)):
@@ -384,7 +668,7 @@ def list_archives(hid: UUID, account_id: UUID = Depends(actor)):
     with db() as conn:
         member(conn, hid, account_id)
         rows = conn.execute(
-            """SELECT week_key,plan,recipes,archived_at FROM weekly_recipe_archives
+            """SELECT week_key,plan,recipes,completed_recipes,starred_recipes,archived_at FROM weekly_recipe_archives
                WHERE household_id=%s ORDER BY week_key DESC LIMIT 52""",
             (hid,)).fetchall()
     return {"archives": rows}
@@ -402,11 +686,12 @@ def save_archive(hid: UUID, week: date, data: WeeklyArchive,
         member(conn, hid, account_id)
         row = conn.execute(
             """INSERT INTO weekly_recipe_archives
-               (household_id,week_key,plan,recipes,archived_by)
-               VALUES (%s,%s,%s,%s,%s)
+               (household_id,week_key,plan,recipes,completed_recipes,starred_recipes,archived_by)
+               VALUES (%s,%s,%s,%s,%s,%s,%s)
                ON CONFLICT (household_id,week_key) DO NOTHING
                RETURNING week_key""",
-            (hid, week, Jsonb(data.plan), Jsonb(data.recipes), account_id)).fetchone()
+            (hid, week, Jsonb(data.plan), Jsonb(data.recipes),
+             Jsonb(data.completed_recipes), Jsonb(data.starred_recipes), account_id)).fetchone()
         if row:
             event(conn, hid, account_id, "archive.saved", {"week": week.isoformat()})
     return {"saved": bool(row), "week": week.isoformat()}
