@@ -185,11 +185,16 @@
       const localRows = adapter.rows().filter(r => r.is_bought || r.is_manual || r.unavailable_stores?.length);
       backup();
       if (action === 'import') {
-        // Import ADDITIF : les coches déjà partagées par d’autres ne sont jamais effacées.
+        // Import ADDITIF : ne pas décocher un achat partagé lorsqu'on importe un signalement magasin.
+        const current = await request(householdPath('/snapshot?week=' + week()));
+        const remote = new Map((current.shopping||[]).map(item=>[item.ingredient_key,item]));
         for (const row of localRows) {
+          const existing = remote.get(row.key);
+          const unavailable = [...new Set([...(existing?.unavailable_stores||[]),...(row.unavailable_stores||[])])];
           await request(householdPath('/shopping/' + week() + '/' + encodeURIComponent(row.key)), 'PUT', {
-            name: row.name, quantity_text: row.quantity_text, store_name: row.store_name,
-            is_bought: Boolean(row.is_bought), unavailable_stores: row.unavailable_stores
+            name: row.name, quantity_text: row.quantity_text,
+            store_name: existing?.store_name||row.store_name,
+            is_bought: Boolean(row.is_bought || existing?.is_bought), unavailable_stores: unavailable
           });
         }
       }
