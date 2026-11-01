@@ -1,0 +1,11 @@
+[Unit]
+Description=Sauvegarde quotidienne Mon Panier
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+Persistent=true
+RandomizedDelaySec=15m
+Unit=mon-panier-backup.service
+
+[Install]
+WantedBy=timers.target
