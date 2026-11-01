@@ -67,20 +67,25 @@ curl -s -o /dev/null -w "Page test : HTTP %{http_code}\\n" --resolve 82.66.229.2
 - Exposer seulement un reverse proxy HTTPS sur 443, après tests des comptes et protections contre tentatives répétées de connexion.
 - Ne **jamais** rediriger la Freebox vers les ports 5432, 8085, 8006 ou 22.
 - Les routes d'écriture sont réservées aux membres authentifiés ; l'initialisation exige BOOTSTRAP_TOKEN et ne peut être effectuée qu'une fois.
-- L'API retourne un jeton Bearer expirant après 7 jours. Le futur client doit prendre en charge déconnexion, erreurs 401 et conflits 409.
-- Mettre en place `pg_dump` quotidien et restauration testée avant usage familial réel.
+- L'API retourne un jeton d'accès de 15 minutes, automatiquement renouvelable grâce à une session de 60 jours d'inactivité (rotation à chaque ouverture). Un changement de mot de passe invalide les sessions actives. Le client gère les erreurs 401 et 409.
+- Activer le timer systemd de sauvegarde quotidienne. Une vérification `pg_restore --list` ne remplace pas un test de restauration intégral périodique.
 - Les achats cochés ne représentent pas nécessairement le stock restant : la table `pantry_items` est indépendante.
 - Les valeurs nutritionnelles proviennent des recettes importées et restent des **estimations**.
 
 ## Endpoints principaux
 - `GET /health`
 - `POST /api/bootstrap`, `POST /api/login`, `POST /api/join`
+- `POST /api/session/refresh`, `POST /api/session/logout`
+- `POST /api/password/change`
+- `POST /api/password-reset/request`, `POST /api/password-reset/confirm`
 - `GET /api/me`, `PUT /api/me/goals`
 - `POST /api/households/{id}/invitations`
 - `GET /api/households/{id}/snapshot?week=YYYY-MM-DD`
 - `GET /api/households/{id}/events?after=N` : événements à interroger toutes les quelques secondes côté client
 - `PUT /api/households/{id}/shopping/{week}/{ingredient_key}`
 - `PUT /api/households/{id}/favorites/{recipe_key}`
+- `GET/PUT /api/households/{id}/week-menus/{monday}`
+- `PUT /api/households/{id}/recipe-progress/{monday}/{recipe_key}`
 - `GET /api/households/{id}/archives`
 - `PUT /api/households/{id}/archives/{monday}`
 - `PUT /api/households/{id}/pantry/{ingredient_key}`
@@ -92,4 +97,70 @@ curl -s -o /dev/null -w "Page test : HTTP %{http_code}\\n" --resolve 82.66.229.2
 ## Restant à développer et tester
 - Tableau de bord repas mobile, confirmation « déjà consommé » et adaptations guidées par les achats.
 - Vérifier périodiquement le renouvellement du certificat IP à durée courte.
-- Automatiser les sauvegardes PostgreSQL et tester leur restauration.
+- Planifier des restaurations complètes sur une VM de test et surveiller l'espace disque.
+- Configurer le stockage hors VM après choix du point de montage Proxmox/NAS.
+- Configurer un relais SMTP sécurisé pour activer le mot de passe oublié.
+
+## Mise à niveau 003 — menu familial, comptes et recettes faites/à faire
+
+**Ne pas lancer la migration 003 avant d'avoir confirmé le succès de la version 002 et une nouvelle sauvegarde.** Depuis la VM `mon-panier-api` en root :
+
+```sh
+cd /opt/mon-panier
+install -d -m 700 /var/backups/mon-panier
+umask 077
+docker compose exec -T db pg_dump -U monpanier -d monpanier -Fc > /var/backups/mon-panier/avant-migration-003.dump
+test -s /var/backups/mon-panier/avant-migration-003.dump
+docker compose exec -T db pg_restore --list < /var/backups/mon-panier/avant-migration-003.dump > /dev/null
+cd /opt/mon-panier/source
+git status --short
+git pull --ff-only
+cd /opt/mon-panier
+docker compose exec -T db psql -v ON_ERROR_STOP=1 -U monpanier -d monpanier < source/backend/migrations/003_family_menu_sessions_recipe_progress.sql
+docker compose up -d --build api
+curl -fsS http://127.0.0.1:8085/health
+```
+
+Les menus actuels et leurs définitions de recettes sont enregistrés pour la famille. Les coches « Faite » / « À faire » sont hebdomadaires ; les étoiles sont indépendantes et persistent entre les semaines. Archives et favoris sont conservés sur le serveur. L'accueil va directement au planning ; « Mes commerces » reste dans le menu et « Archives » est placé en dernier.
+
+### Rester connecté et récupérer son compte
+
+Les jetons d'accès ont une durée de vie courte ; la session est renouvelée automatiquement lors d'une utilisation régulière. La session de renouvellement expire après 60 jours d'inactivité, ou immédiatement après une déconnexion / réinitialisation du mot de passe. Une application web ne peut promettre une session absolument infinie en toute sécurité.
+
+L'envoi d'un lien « mot de passe oublié » demande de configurer, **uniquement dans le fichier .env privé de la VM** :
+
+- `PANIER_SMTP_HOST` : serveur SMTP
+- `PANIER_SMTP_PORT` : 587 (STARTTLS) ou 465 (TLS direct)
+- `PANIER_SMTP_USER` et `PANIER_SMTP_PASSWORD` : compte autorisé à envoyer
+- `PANIER_SMTP_FROM` : adresse d'envoi
+- `PANIER_RESET_URL` : `https://jaycikomo.github.io/mon-panier/` par défaut
+
+Le code de récupération est aléatoire, stocké seulement sous forme hachée, envoyé par e-mail, valable 30 minutes et utilisable une fois. Un délai de 15 minutes limite la répétition des demandes pour un même compte. Sans SMTP, cette fonction indique explicitement qu'elle n'est pas encore disponible. Ne jamais envoyer les identifiants SMTP dans une conversation ni les commiter dans Git.
+
+Après vérification de `docker compose config -q` et comparaison des modifications locales éventuelles, intégrer les variables `PANIER_SMTP_*` à la configuration active de l'API. Ne pas remplacer le `compose.yaml` actif sans vérifier les différences avec le fichier versionné.
+
+### Sauvegardes de nuit
+
+Les fichiers versionnés :
+
+- `backend/backup/mon-panier-backup.sh`
+- `backend/backup/mon-panier-backup.service`
+- `backend/backup/mon-panier-backup.timer`
+
+Installation contrôlée :
+
+```sh
+cd /opt/mon-panier
+install -m 700 source/backend/backup/mon-panier-backup.sh /usr/local/sbin/mon-panier-backup
+install -m 644 source/backend/backup/mon-panier-backup.service /etc/systemd/system/mon-panier-backup.service
+install -m 644 source/backend/backup/mon-panier-backup.timer /etc/systemd/system/mon-panier-backup.timer
+systemctl daemon-reload
+systemctl start mon-panier-backup.service
+systemctl enable --now mon-panier-backup.timer
+systemctl list-timers mon-panier-backup.timer --no-pager
+ls -lh /var/backups/mon-panier/daily/
+```
+
+Le timer déclenche une sauvegarde PostgreSQL vers 03h15, avec retard aléatoire maximum de 15 minutes, et une exécution de rattrapage si la VM était éteinte. Les fichiers sont créés avec droits restreints et vérifiés avec `pg_restore --list`. **Aucune sauvegarde n'est automatiquement supprimée** : surveiller la place disque.
+
+Une deuxième copie hors VM est possible avec `PANIER_OFFSITE_DIR`, qui doit pointer sur un vrai point de montage sous `/mnt/` (NAS, stockage indépendant) ; le script refuse d'écrire dans un dossier local non monté. La cible reste à choisir et monter avec l'administrateur Proxmox.
