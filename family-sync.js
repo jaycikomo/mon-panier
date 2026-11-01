@@ -20,7 +20,7 @@
     refreshToken: localStorage.getItem(REFRESH_KEY) || '', household: null,
     profile: null, mode: 'offline', message: '', invitation: '', lastEvent: 0,
     versions: {}, busy: false, pending: new Set(), queued: new Set(), generations: new Map(), favoritePending: {}, favoriteFlushing: false, menuVersion: null, menuSaving: false,
-    progressPending: {}, progressFlushing: false };
+    progressPending: {}, progressFlushing: false, syncedWeek: null };
 
   function escapeHTML(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, ch =>
@@ -319,6 +319,7 @@
         await syncExtras();
         try { await syncMenu(); } catch (e) { session.message = '⚠ Menu familial : '+e.message; }
         await snapshotAndApply();
+        session.syncedWeek=week();
         setMode('live', session.message.startsWith('⚠')?session.message:'Vos achats, favoris et archives sont partagés avec la famille.');
       } else {
         setMode('choose', 'Choisissez comment réunir les courses de ce téléphone avec la famille.');
@@ -350,6 +351,7 @@
       await syncExtras(action==='import');
       try { await syncMenu(); } catch (e) { session.message = '⚠ Menu familial : '+e.message; }
       await snapshotAndApply();
+      session.syncedWeek=week();
       setMode('live', 'Synchronisation familiale activée.');
     } catch (error) {
       setMode('choose', error.message + ' Réessayez. Aucune donnée locale n’a été supprimée.');
@@ -357,6 +359,12 @@
   }
   function recordChange(key, removed) {
     if (session.mode !== 'live') return;
+    if(session.syncedWeek && session.syncedWeek!==week()){
+      if(session.queued.size){setMessage('⚠ Des achats de la semaine précédente restent à envoyer.');return;}
+      session.syncedWeek=week();session.versions={};session.menuVersion=null;
+      loadProgressPending();
+      void syncMenu().catch(e=>setMessage(e.message));
+    }
     const command = (removed ? 'delete:' : 'put:') + key;
     session.generations.set(command, (session.generations.get(command) || 0) + 1);
     session.queued.add(command);
@@ -364,6 +372,10 @@
     void flush();
   }
   async function flush() {
+    if(session.syncedWeek && session.syncedWeek!==week()){
+      session.message='⚠ Envois de l’ancienne semaine à vérifier avant de continuer.';
+      renderPanel();return;
+    }
     if (session.busy || session.mode !== 'live' || !session.queued.size) return;
     session.busy = true;
     try {
@@ -398,6 +410,19 @@
   }
   async function poll() {
     if (session.busy || session.mode !== 'live' || document.visibilityState !== 'visible') return;
+    if(session.syncedWeek && session.syncedWeek!==week()){
+      if(session.queued.size){
+        session.message='⚠ Des achats de l’ancienne semaine sont en attente. Aucune donnée n’est supprimée.';
+        renderPanel();return;
+      }
+      session.syncedWeek=week();session.menuVersion=null;session.versions={};
+      loadProgressPending();
+      try{
+        await syncExtras();await syncMenu();await snapshotAndApply();
+        session.message='Nouvelle semaine synchronisée avec la famille.';
+      }catch(e){session.message='⚠ Nouvelle semaine : '+e.message;}
+      renderPanel();return;
+    }
     if (!isLinked()) { setMode('choose', 'Nouvelle semaine : choisissez la liste familiale.'); return; }
     if (session.queued.size) { await flush(); return; }
     if (Object.keys(session.favoritePending).length) await flushFavorites();
