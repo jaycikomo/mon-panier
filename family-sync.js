@@ -6,12 +6,14 @@
   const AUTH_KEY = 'mon-panier-family-auth-v1';
   const LINK_KEY = 'mon-panier-family-linked-v1';
   const OUTBOX_KEY = 'mon-panier-family-outbox-v1';
+  const STAR_OUTBOX_KEY = 'mon-panier-family-star-pending-v1';
+  const STAR_IMPORTED_KEY = 'mon-panier-family-stars-imported-v1';
   const adapter = window.MonPanierFamilyAdapter;
   if (!adapter) return;
 
   const session = { token: localStorage.getItem(AUTH_KEY) || '', household: null,
     profile: null, mode: 'offline', message: '', invitation: '', lastEvent: 0,
-    versions: {}, busy: false, pending: new Set(), queued: new Set(), generations: new Map() };
+    versions: {}, busy: false, pending: new Set(), queued: new Set(), generations: new Map(), favoritePending: {}, favoriteFlushing: false };
 
   function escapeHTML(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, ch =>
@@ -67,7 +69,83 @@
     snapshotVersions(data.shopping || []);
     session.lastEvent = data.last_event_id || 0;
     adapter.apply(data.shopping || []);
+    const favorites=(data.favorites||[]).filter(row=>!(row.recipe_key in session.favoritePending));
+    for(const [key,starred] of Object.entries(session.favoritePending))favorites.push({recipe_key:key,starred});
+    adapter.applyFavorites(favorites);
     renderPanel();
+  }
+  function favoritePendingKey() {
+    return session.household ? STAR_OUTBOX_KEY + ':' + session.household.id : '';
+  }
+  function loadFavoritePending() {
+    try { const pending = JSON.parse(localStorage.getItem(favoritePendingKey()));
+      session.favoritePending = pending && typeof pending === 'object' && !Array.isArray(pending) ? pending : {};
+    } catch (_) { session.favoritePending = {}; }
+  }
+  function persistFavoritePending() {
+    if (session.household) localStorage.setItem(favoritePendingKey(), JSON.stringify(session.favoritePending));
+  }
+  async function flushFavorites() {
+    if (!session.household || !session.token || session.favoriteFlushing) return;
+    session.favoriteFlushing = true;
+    try {
+      while (Object.keys(session.favoritePending).length) {
+        const [key,starred] = Object.entries(session.favoritePending)[0];
+        try {
+          await request(householdPath('/favorites/' + encodeURIComponent(key)), 'PUT', {starred:Boolean(starred)});
+          if (session.favoritePending[key] === starred) delete session.favoritePending[key];
+          persistFavoritePending();
+        } catch (error) {
+          session.message = '⚠ Favoris en attente : ' + error.message;
+          break;
+        }
+      }
+    } finally { session.favoriteFlushing = false; }
+  }
+  function setFavorite(key,starred) {
+    if (!session.household) return;
+    session.favoritePending[key] = Boolean(starred);
+    persistFavoritePending();
+    if (session.mode === 'live') void flushFavorites();
+  }
+  async function seedLocalStars() {
+    const marker = STAR_IMPORTED_KEY + ':' + session.household.id;
+    if (localStorage.getItem(marker) === 'yes') return;
+    for (const key of Object.keys(adapter.favorites())) {
+      // Migration additive : on conserve les favoris présents sur ce téléphone.
+      await request(householdPath('/favorites/' + encodeURIComponent(key)), 'PUT', {starred:true});
+    }
+    localStorage.setItem(marker, 'yes');
+  }
+  async function syncArchives() {
+    const before = await request(householdPath('/archives'));
+    const remoteWeeks = new Set((before.archives||[]).map(a=>a.week_key));
+    let wrote = false;
+    for (const archive of adapter.archives()) {
+      if (!/^\d{4}-\d\d-\d\d$/.test(archive.key) || remoteWeeks.has(archive.key)) continue;
+      const payload = adapter.archivePayload(archive);
+      if (!payload.plan?.flat().every(key=>payload.recipes[key])) continue;
+      await request(householdPath('/archives/' + archive.key), 'PUT', payload);
+      wrote = true;
+    }
+    const data = wrote ? await request(householdPath('/archives')) : before;
+    adapter.applyArchives(data.archives||[]);
+  }
+  function archiveWeek(archive) {
+    // La sauvegarde locale existe déjà ; au prochain démarrage, syncArchives retentera l'envoi.
+    if (!session.household || session.mode !== 'live') return;
+    const payload = adapter.archivePayload(archive);
+    if (!payload.plan?.flat().every(key=>payload.recipes[key])) return;
+    void request(householdPath('/archives/' + archive.key),'PUT',payload)
+      .then(()=>syncArchives())
+      .catch(e=>setMessage('⚠ Archive locale conservée, envoi à reprendre : '+e.message));
+  }
+  async function syncExtras() {
+    try {
+      await seedLocalStars();
+      await flushFavorites();
+      await syncArchives();
+    } catch (error) { session.message = '⚠ Archives ou favoris : '+error.message+' (les courses restent utilisables).'; }
   }
   async function start() {
     if (!session.token) { setMode('offline'); return; }
@@ -77,6 +155,7 @@
       session.profile = me.profile;
       session.household = (me.households || [])[0] || null;
       if (!session.household) throw new Error('Ce compte ne fait partie d’aucune famille.');
+      loadFavoritePending();
       if (isLinked()) {
         let oldOutbox = null;
         try { oldOutbox = JSON.parse(localStorage.getItem(OUTBOX_KEY)); } catch (_) {}
@@ -90,8 +169,9 @@
           await flush();
           if (session.queued.size) return;
         }
+        await syncExtras();
         await snapshotAndApply();
-        setMode('live', 'Vos achats sont partagés avec la famille.');
+        setMode('live', session.message.startsWith('⚠')?session.message:'Vos achats, favoris et archives sont partagés avec la famille.');
       } else {
         setMode('choose', 'Choisissez comment réunir les courses de ce téléphone avec la famille.');
       }
@@ -102,18 +182,19 @@
     session.busy = true;
     setMode('connecting', 'Préparation de la liste familiale…');
     try {
-      const localRows = adapter.rows().filter(r => r.is_bought || r.is_manual);
+      const localRows = adapter.rows().filter(r => r.is_bought || r.is_manual || r.unavailable_stores?.length);
       backup();
       if (action === 'import') {
         // Import ADDITIF : les coches déjà partagées par d’autres ne sont jamais effacées.
         for (const row of localRows) {
           await request(householdPath('/shopping/' + week() + '/' + encodeURIComponent(row.key)), 'PUT', {
             name: row.name, quantity_text: row.quantity_text, store_name: row.store_name,
-            is_bought: Boolean(row.is_bought)
+            is_bought: Boolean(row.is_bought), unavailable_stores: row.unavailable_stores
           });
         }
       }
       localStorage.setItem(LINK_KEY, localKey());
+      await syncExtras();
       await snapshotAndApply();
       setMode('live', 'Synchronisation familiale activée.');
     } catch (error) {
@@ -146,7 +227,7 @@
           if (!row) { session.queued.delete(command); persistOutbox(); continue; }
           const saved = await request(path, 'PUT', {
             name: row.name, quantity_text: row.quantity_text, store_name: row.store_name,
-            is_bought: Boolean(row.is_bought),
+            is_bought: Boolean(row.is_bought), unavailable_stores: row.unavailable_stores,
             expected_version: session.versions[key] || 0
           });
           session.versions[key] = Number(saved.version) || 1;
@@ -165,12 +246,14 @@
     if (session.busy || session.mode !== 'live' || document.visibilityState !== 'visible') return;
     if (!isLinked()) { setMode('choose', 'Nouvelle semaine : choisissez la liste familiale.'); return; }
     if (session.queued.size) { await flush(); return; }
+    if (Object.keys(session.favoritePending).length) await flushFavorites();
     session.busy = true;
     try {
       const data = await request(householdPath('/events?after=' + session.lastEvent));
       if ((data.events || []).length) {
+        if (data.events.some(e=>e.kind==='archive.saved')) await syncArchives();
         await snapshotAndApply();
-        session.message = 'Liste actualisée depuis les autres téléphones.';
+        session.message = 'Achats et favoris actualisés depuis les autres téléphones.';
       }
     } catch (error) { session.message = '⚠ Synchronisation en attente : ' + error.message; }
     finally { session.busy = false; renderPanel(); }
@@ -212,7 +295,7 @@
   }
   function logout() {
     session.token = ''; session.household = null; session.profile = null;
-    session.queued.clear(); session.generations.clear(); session.invitation = ''; session.lastEvent = 0;
+    session.queued.clear(); session.generations.clear(); session.favoritePending={}; session.invitation = ''; session.lastEvent = 0;
     localStorage.removeItem(AUTH_KEY);
     setMode('offline', 'Déconnecté. Les données déjà présentes sur cet appareil sont conservées.');
   }
@@ -272,7 +355,7 @@
     if (action === 'receive') void link('receive');
     if (action === 'import') void link('import');
     if (action === 'refresh') void snapshotAndApply().catch(e => setMessage(e.message));
-    if (action === 'retry') void flush();
+    if (action === 'retry') { void flush(); void flushFavorites(); void syncArchives().catch(e=>setMessage(e.message)); }
     if (action === 'invite') void invitation();
     if (action === 'logout') logout();
     if (action === 'copy-invite' && session.invitation) {
@@ -281,7 +364,7 @@
     }
   });
 
-  window.MonPanierFamily = { renderPanel, recordChange };
+  window.MonPanierFamily = { renderPanel, recordChange, setFavorite, archiveWeek };
   window.addEventListener('mon-panier:render', renderPanel);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void poll(); });
   setInterval(() => { void poll(); }, 8000);
