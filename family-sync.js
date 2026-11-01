@@ -513,7 +513,28 @@
       setMode('offline','✅ Mot de passe changé. Reconnecte-toi avec le nouveau.');
     }catch(e){setMessage(e.message);}
   }
+  function renderConnectionBadge() {
+    const badge = document.getElementById('family-connection-status');
+    if (!badge) return;
+    const warning = session.message.startsWith('⚠');
+    let label = 'Non connecté', level = 'offline';
+    if (session.mode === 'live' && !warning) {
+      label = 'Connecté'; level = 'connected';
+    } else if (warning || session.mode === 'error') {
+      label = 'À vérifier'; level = 'warning';
+    } else if (session.mode === 'connecting') {
+      label = 'Connexion…'; level = 'pending';
+    } else if (session.mode === 'choose') {
+      label = 'À relier'; level = 'pending';
+    }
+    badge.className = 'family-connection-status ' + level;
+    badge.textContent = '● ' + label;
+    badge.title = level === 'connected'
+      ? 'Synchronisation familiale active (toutes les 8 secondes)'
+      : 'Ouvrez Mon compte pour les détails de la connexion familiale';
+  }
   function renderPanel() {
+    renderConnectionBadge();
     const target = document.getElementById('family-sync-panel');
     if (!target) return;
     let content = '<div class="card sheet" style="margin-bottom:16px"><h2 style="margin:0 0 8px">👨‍👩‍👧‍👦 Courses en famille</h2>';
