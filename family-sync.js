@@ -100,7 +100,7 @@
     return marker===session.household.id || marker.startsWith(session.household.id+':');
   }
   function backup() {
-    const key = 'mon-panier-before-family-' + week();
+    const key = 'mon-panier-before-family-' + (session.household?.id || 'local') + ':' + week();
     if (!localStorage.getItem(key)) localStorage.setItem(key, adapter.backup());
   }
   function setMode(mode, message) {
@@ -169,22 +169,25 @@
     }
     localStorage.setItem(marker, 'yes');
   }
-  async function syncArchives() {
+  async function syncArchives(importLocal=false) {
     const before = await request(householdPath('/archives'));
     const remoteWeeks = new Set((before.archives||[]).map(a=>a.week_key));
     let wrote = false;
-    for (const archive of adapter.archives()) {
-      if (!/^\d{4}-\d\d-\d\d$/.test(archive.key) || remoteWeeks.has(archive.key)) continue;
-      const payload = adapter.archivePayload(archive);
-      if (!payload.plan?.flat().every(key=>payload.recipes[key])) continue;
-      await request(householdPath('/archives/' + archive.key), 'PUT', payload);
-      wrote = true;
+    // Une simple connexion ne publie pas les archives locales d'un autre appareil.
+    if (importLocal) {
+      for (const archive of adapter.archives()) {
+        if (!/^\d{4}-\d\d-\d\d$/.test(archive.key) || remoteWeeks.has(archive.key)) continue;
+        const payload = adapter.archivePayload(archive);
+        if (!payload.plan?.flat().every(key=>payload.recipes[key])) continue;
+        await request(householdPath('/archives/' + archive.key), 'PUT', payload);
+        wrote = true;
+      }
     }
     const data = wrote ? await request(householdPath('/archives')) : before;
     adapter.applyArchives(data.archives||[]);
   }
   function archiveWeek(archive) {
-    // La sauvegarde locale existe déjà ; au prochain démarrage, syncArchives retentera l'envoi.
+    // La sauvegarde locale existe déjà ; le bouton « Réessayer » peut reprendre l'envoi.
     if (!session.household || session.mode !== 'live') return;
     const payload = adapter.archivePayload(archive);
     if (!payload.plan?.flat().every(key=>payload.recipes[key])) return;
@@ -192,13 +195,13 @@
       .then(()=>syncArchives())
       .catch(e=>setMessage('⚠ Archive locale conservée, envoi à reprendre : '+e.message));
   }
-  async function syncExtras(importLocal=true) {
+  async function syncExtras(importLocal=false) {
     try {
       if(importLocal)await seedLocalStars();
       await flushFavorites();
       if(importLocal)await seedLocalProgress();
       await flushProgress();
-      await syncArchives();
+      await syncArchives(importLocal);
     } catch (error) { session.message = '⚠ Archives ou favoris : '+error.message+' (les courses restent utilisables).'; }
   }
   function progressKey() {
@@ -322,11 +325,13 @@
         session.syncedWeek=week();
         setMode('live', session.message.startsWith('⚠')?session.message:'Vos achats, favoris et archives sont partagés avec la famille.');
       } else {
-        setMode('choose', 'Choisissez comment réunir les courses de ce téléphone avec la famille.');
+        // Une connexion reconnue suffit : récupération automatique de la liste familiale.
+        // La liste locale est sauvegardée avant le remplacement des coches affichées.
+        await link('receive', true);
       }
     } catch (error) { setMode(session.token ? 'error' : 'offline', error.message); }
   }
-  async function link(action) {
+  async function link(action, automatic=false) {
     if (!session.household || session.busy) return;
     session.busy = true;
     setMode('connecting', 'Préparation de la liste familiale…');
@@ -352,7 +357,9 @@
       try { await syncMenu(); } catch (e) { session.message = '⚠ Menu familial : '+e.message; }
       await snapshotAndApply();
       session.syncedWeek=week();
-      setMode('live', 'Synchronisation familiale activée.');
+      setMode('live', automatic
+        ? 'Connexion réussie : les achats de votre famille sont synchronisés automatiquement.'
+        : 'Synchronisation familiale activée.');
     } catch (error) {
       setMode('choose', error.message + ' Réessayez. Aucune donnée locale n’a été supprimée.');
     } finally { session.busy = false; }
@@ -617,7 +624,7 @@
     if (action === 'receive') void link('receive');
     if (action === 'import') void link('import');
     if (action === 'refresh') void snapshotAndApply().catch(e => setMessage(e.message));
-    if (action === 'retry') { void flush(); void flushFavorites(); void flushProgress(); void syncArchives().catch(e=>setMessage(e.message)); }
+    if (action === 'retry') { void flush(); void flushFavorites(); void flushProgress(); void syncArchives(true).catch(e=>setMessage(e.message)); }
     if (action === 'invite') void invitation();
     if (action === 'logout') logout();
     if (action === 'publish-menu' && window.confirm('Partager ce menu avec toute la famille ?')) void publishMenu(true);
