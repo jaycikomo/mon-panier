@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="fr">
 <head>
+<meta name="referrer" content="no-referrer">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#183b30">
@@ -85,6 +86,29 @@
 
 .retail-catalog-note{font-size:12px;line-height:1.6;border:1px solid #dce6d7;background:#f5f8f0;border-radius:12px;padding:11px 13px;margin:9px 0 13px;color:#436044}
 .retail-catalog-note a{color:#205638;text-decoration:underline;font-weight:750}
+
+/* Product availability reports, never retailer-verified stock. */
+.unavailable-panel{margin-top:9px;padding:8px 0 0;border-top:1px dashed #e2e9df}
+.unavailable-label{display:block;font-size:11px;font-weight:750;color:#6a4c3e;margin-bottom:6px}
+.unavailable-options{display:flex;flex-wrap:wrap;gap:5px}
+.unavailable-chip{border:1px solid #d4d8d2;border-radius:7px;background:#f7f8f6;color:#536459;font:inherit;font-size:11px;padding:5px 7px;cursor:pointer;line-height:1.25}
+.unavailable-chip.marked{border-color:#c27359;background:#fff0e9;color:#983b25;font-weight:750}
+.unavailable-chip:focus-visible,.recipe-star:focus-visible{outline:3px solid #268a63;outline-offset:2px}
+.recipe-card-shell{position:relative;min-width:0}
+.account-header{background:#eff4ea;color:#174632;white-space:nowrap}
+@media(max-width:700px){.top-actions>.pill{display:none}}
+@media(max-width:470px){.top-actions>.share-header{display:none}.top-actions{gap:5px}.account-header{font-size:11px;padding:8px!important}}
+.recipe-card-shell>.recipe-card{width:100%;height:100%;padding-right:86px;text-align:left}
+.recipe-tools{position:absolute;right:7px;top:7px;z-index:2;display:flex;flex-direction:column;gap:9px;align-items:center}
+.recipe-tools>.recipe-star{position:static}
+.recipe-done-label{display:inline-flex;align-items:center;gap:5px;background:#eef6e9;padding:6px 8px;border-radius:9px;font-size:12px;font-weight:750;color:#27563b;cursor:pointer;white-space:nowrap}
+.recipe-done-label input{accent-color:#287348;width:17px;height:17px;cursor:pointer}
+.modal-star+.recipe-done-label{margin:8px 0 0 8px}
+.recipe-star{border:1px solid #e8cf95;background:#fffdf6;color:#b58a30;font-size:29px;line-height:1;border-radius:50%;width:40px;height:40px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+/* La coche « faite » et l'étoile sont deux actions independantes. */
+.recipe-star.starred{color:#d48c13;border-color:#deb34c;background:#fffae3}
+.modal-star{margin-top:7px}
+@media(max-width:480px){.unavailable-chip{font-size:10.5px;padding:6px 6px}.recipe-tools{right:5px;top:6px}.recipe-card-shell>.recipe-card{padding-right:83px}}
 </style>
 </head>
 <body>
@@ -109,7 +133,7 @@ const stores=[
 {id:'alimentation-bouilladisse',name:'Alimentation de La Bouilladisse',town:'La Bouilladisse',type:'Supérette',emoji:'🏪',address:'1 avenue de Bigarron, 13720 La Bouilladisse'},
 {id:'carrefour-peypin',name:'Carrefour Express',town:'Peypin',type:'Supérette',emoji:'🏪',address:'284 avenue de la République, 13124 Peypin'}
 ];
-const defaults={ready:false,people:2,stores:['lidl-destrousse','aldi','netto'],checked:{},subs:{},assign:{},manual:[],photos:true};
+const defaults={ready:true,people:2,stores:['lidl-destrousse','aldi','netto','inter'],checked:{},subs:{},assign:{},storeUnavailable:{},favorites:{},recipeDone:{},manual:[],photos:true};
 const STORAGE='mon-panier-v1';
 const AI_LATEST_URL='https://raw.githubusercontent.com/jaycikomo/mon-panier/main/data/ai/latest.json';
 const RETAIL_CATALOG_URL='https://raw.githubusercontent.com/jaycikomo/mon-panier/main/data/retail/catalog.json';
@@ -145,7 +169,10 @@ function integrateAI(weekly){
  state.aiBatch=Number.isInteger(weekly.batch_week_index)&&Number.isInteger(weekly.batch_weeks)&&
    weekly.batch_weeks>=1&&weekly.batch_week_index>=1&&weekly.batch_week_index<=weekly.batch_weeks
    ?{index:weekly.batch_week_index,total:weekly.batch_weeks,start:weekly.batch_start}:null;
- if(state.aiApplied!==weekly.week){
+ if(state.familyMenuWeek===weekly.week){
+  DATA.plan=state.weekPlan;
+  state.aiApplied=weekly.week;
+ }else if(state.aiApplied!==weekly.week){
   state.weekPlan=weekly.plan.map(day=>day.slice());
   DATA.plan=state.weekPlan;
   state.aiApplied=weekly.week;
@@ -244,10 +271,19 @@ function rollover(){
  const today=mondayKey();
  if(state.weekKey===today&&isValidPlan(state.weekPlan)){DATA.plan=state.weekPlan;return false}
  if(state.weekKey&&isValidPlan(state.weekPlan)){
-   const saved={key:state.weekKey,plan:state.weekPlan,archivedAt:new Date().toISOString()};
+   const recipes={};
+   for(const key of new Set(state.weekPlan.flat()))if(DATA.recipes[key])recipes[key]=DATA.recipes[key];
+   const keys=new Set(state.weekPlan.flat());
+   const saved={key:state.weekKey,plan:state.weekPlan,recipes,
+     completed_recipes:[...keys].filter(k=>state.recipeDone?.[k]),
+     starred_recipes:[...keys].filter(k=>state.favorites?.[k]),
+     archivedAt:new Date().toISOString()};
    state.archives=[saved,...state.archives.filter(x=>x.key!==saved.key)].slice(0,52);
+   window.MonPanierFamily?.archiveWeek(saved);
  }
  state.weekKey=today;state.weekPlan=weeklyPlan(today);
+ state.familyMenuWeek=null;state.familyMenuDirty=false;
+ state.recipeDone={};
  state.checked={};state.manual=[];DATA.plan=state.weekPlan;
  store();return true;
 }
@@ -270,6 +306,8 @@ function load(){
   }catch(e){console.warn('Lien de partage illisible',e)}
  }
  state={...defaults,...previous,...(imported||{})};
+ // Acces direct aux menus : les commerces se reglent seulement depuis « Mes commerces ».
+ state.ready=true;
  if(imported&&!imported.weekPlan){
    // Le lien transmet une copie légère des coches ; les recettes IA seront récupérées séparément.
    state.weekPlan=weeklyPlan(mondayKey());
@@ -278,8 +316,16 @@ function load(){
  }
  state.aiRecipes=previous.aiRecipes&&typeof previous.aiRecipes==='object'?previous.aiRecipes:{};
  for(const [id,recipe] of Object.entries(state.aiRecipes)){if(validAIRecipe(id,recipe))DATA.recipes[id]=recipe}
- state.archives=Array.isArray(previous.archives)?previous.archives.filter(x=>x&&isValidPlan(x.plan)&&typeof x.key==='string').slice(0,52):[];
+ const archivedCandidates=Array.isArray(previous.archives)?previous.archives:[];
+ // Restaurer les définitions AVANT de valider les plans d'anciennes semaines IA.
+ for(const archive of archivedCandidates)for(const [key,recipe] of Object.entries(archive?.recipes||{}))
+   if(recipe&&Array.isArray(recipe.items)&&recipe.items.every(i=>DATA.ingredients[i.id]))DATA.recipes[key]=recipe;
+ state.archives=archivedCandidates.filter(x=>x&&isValidPlan(x.plan)&&typeof x.key==='string').slice(0,52);
  state.stores=Array.isArray(state.stores)?state.stores.filter(id=>stores.some(s=>s.id===id)):defaults.stores.slice();
+ if(!state.interStoreAddedV1){if(!state.stores.includes('inter'))state.stores.push('inter');state.interStoreAddedV1=true;}
+ state.storeUnavailable=state.storeUnavailable&&typeof state.storeUnavailable==='object'?state.storeUnavailable:{};
+ state.favorites=state.favorites&&typeof state.favorites==='object'?state.favorites:{};
+ state.recipeDone=state.recipeDone&&typeof state.recipeDone==='object'?state.recipeDone:{};
  state.people=Math.max(1,Math.min(8,Number(state.people)||2));
  state.checked=state.checked&&typeof state.checked==='object'?state.checked:{};
  state.subs=state.subs&&typeof state.subs==='object'?state.subs:{};
@@ -320,8 +366,10 @@ function chosen(){
 }
 function assigned(id,aisle){
  const storesReady=chosen();
- if(state.assign[id]&&storesReady.some(s=>s.id===state.assign[id]))return state.assign[id];
- return storesReady.length?storesReady[0].id:'';
+ const reported=Array.isArray(state.storeUnavailable[id])?state.storeUnavailable[id]:[];
+ const candidates=storesReady.filter(s=>!reported.includes(s.id));
+ if(state.assign[id]&&candidates.some(s=>s.id===state.assign[id]))return state.assign[id];
+ return candidates.length?candidates[0].id:(storesReady.length?storesReady[0].id:'');
 }
 function safeRetailUrl(url){
  if(typeof url!=='string')return false;
@@ -341,21 +389,20 @@ function evidenceFor(id,storeId){
 }
 function progress(){const a=listData();return {done:a.filter(x=>!!state.checked[x.id]).length,total:a.length}}
 function notify(msg){document.querySelector('.toast')?.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
-function header(){return `<header class="top"><div class="shell top-inner"><button class="brand" data-action="goto" data-tab="plan"><span class="brand-mark">🥬</span><span><div class="brand-name">Mon Panier</div><div class="brand-sub">Menus & courses</div></span></button><div class="top-actions"><span class="pill">📍 La Bouilladisse</span><button class="btn btn-small share-header" data-action="share" aria-label="Partager la liste de courses">📤 <span>Partager</span></button><button class="btn btn-small" data-action="goto" data-tab="courses">🛒 Courses</button></div></div></header>`}
-function hero(){const count=progress();return `<section class="hero"><div><div class="eyebrow">🌿 Mangeons bon, mangeons simple</div><h1>Votre semaine dans le panier.</h1><p>7 jours de repas renouvelés chaque lundi, une liste intelligente et les commerces autour de La Bouilladisse.</p></div><div class="hero-badges"><span>🔥 ≈ 1 900 kcal / jour</span><span>💪 ≈ 130 g de protéines</span></div></section><nav class="mainnav" aria-label="Navigation"><button class="nav-btn ${ui.tab==='plan'?'active':''}" data-action="goto" data-tab="plan">📅 Ma semaine</button><button class="nav-btn ${ui.tab==='archives'?'active':''}" data-action="goto" data-tab="archives">🗂️ Archives</button><button class="nav-btn ${ui.tab==='courses'?'active':''}" data-action="goto" data-tab="courses">✅ Liste de courses ${count.done}/${count.total}</button><button class="nav-btn ${ui.tab==='recettes'?'active':''}" data-action="goto" data-tab="recettes">🍽️ Recettes</button><button class="nav-btn ${ui.tab==='magasins'?'active':''}" data-action="goto" data-tab="magasins">📍 Mes commerces</button></nav>`}
+function header(){return `<header class="top"><div class="shell top-inner"><button class="brand" data-action="goto" data-tab="plan"><span class="brand-mark">🥬</span><span><div class="brand-name">Mon Panier</div><div class="brand-sub">Menus & courses</div></span></button><div class="top-actions"><span class="pill">📍 La Bouilladisse</span><button class="btn btn-small share-header" data-action="share" aria-label="Partager la liste de courses">📤 <span>Partager</span></button><button class="btn btn-small" data-action="goto" data-tab="courses">🛒 Courses</button><button class="btn btn-small account-header" data-action="goto" data-tab="compte" aria-label="Ouvrir Mon compte">👤 Mon compte</button></div></div></header>`}
+function hero(){const count=progress();return `<section class="hero"><div><div class="eyebrow">🌿 Mangeons bon, mangeons simple</div><h1>Votre semaine dans le panier.</h1><p>7 jours de repas renouvelés chaque lundi, une liste intelligente et les commerces autour de La Bouilladisse.</p></div><div class="hero-badges"><span>🔥 ≈ 1 900 kcal / jour</span><span>💪 ≈ 130 g de protéines</span></div></section><nav class="mainnav" aria-label="Navigation"><button class="nav-btn ${ui.tab==='plan'?'active':''}" data-action="goto" data-tab="plan">📅 Ma semaine</button><button class="nav-btn ${ui.tab==='courses'?'active':''}" data-action="goto" data-tab="courses">✅ Liste de courses ${count.done}/${count.total}</button><button class="nav-btn ${ui.tab==='recettes'?'active':''}" data-action="goto" data-tab="recettes">🍽️ Recettes</button><button class="nav-btn ${ui.tab==='magasins'?'active':''}" data-action="goto" data-tab="magasins">📍 Mes commerces</button><button class="nav-btn ${ui.tab==='archives'?'active':''}" data-action="goto" data-tab="archives">🗂️ Archives</button></nav>`}
 function storeCards(){const types=(ui.shopType==='Tous'?stores:stores.filter(s=>s.type===ui.shopType)).slice().sort((a,b)=>{
  const ia=STORE_PRIORITY.indexOf(a.id),ib=STORE_PRIORITY.indexOf(b.id);
  return (ia<0?100:ia)-(ib<0?100:ib);
 });return `<div class="site-grid">${types.map(s=>{const selected=state.stores.includes(s.id);return `<article class="card site-card ${selected?'selected':''}" data-action="toggle-store-card" data-id="${s.id}"><input class="store-check" type="checkbox" aria-label="Choisir ${esc(s.name)} ${esc(s.town)}" data-store="${s.id}" ${selected?'checked':''}><span class="shop-icon">${s.emoji}</span><div class="shop-body"><div class="category">${s.type.toUpperCase()} · ${esc(s.town)}</div><h3>${esc(s.name)}</h3><p>${esc(s.address)}</p>${s.hint?`<div class="${s.future?'market-note':'tiny-pill'}">${esc(s.hint)}</div>`:''}<div><a class="shop-link" target="_blank" rel="noopener noreferrer" href="${s.url||maps(s.address)}" data-action="external">${s.url?'ℹ️ Informations officielles':'↗ Itinéraire'}</a>${s.url?` · <a class="shop-link" target="_blank" rel="noopener noreferrer" href="${maps(s.address)}" data-action="external">Itinéraire</a>`:''}</div></div></article>`}).join('')}</div>`}
 function storeFilters(){return `<div class="store-filters">${['Tous','Supermarché','Marché','Primeur','Supérette'].map(x=>`<button class="chip ${ui.shopType===x?'active':''}" data-action="storetype" data-type="${x}">${x==='Tous'?'Tous les lieux':x}</button>`).join('')}</div>`}
 function maps(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
-function setup(){return `${header()}<div class="shell intro"><span class="intro-badge">ÉTAPE 1 SUR 2 • VOS COMMERCES</span><h1>Où faites-vous vos courses ? 🛒</h1><p>Choisissez les supermarchés, marchés, primeurs et petites épiceries que vous utilisez. Vous pourrez attribuer chaque produit à un magasin.</p><section class="card sheet"><div class="spread"><h2 style="margin:0;font-size:20px">Près de La Bouilladisse</h2><span class="pill">${chosen().length} lieu(x) choisi(s)</span></div>${storeFilters()}${storeCards()}</section><div class="notice notice-amber">📆 <b>Marchés :</b> le jeudi matin est déjà en place. Le nouveau marché du samedi n'ouvrira qu'à partir du <b>7 novembre 2026</b> selon la mairie.</div><div class="setup-footer"><span class="small muted">Vous pourrez changer ces choix à tout moment.</span><button class="btn" data-action="finish-setup">Continuer vers les menus →</button></div></div>`}
 function cardsPlan(){const mnames=['Matin','Midi','Collation','Soir'];return `<section class="section-head"><div><h2>Menu du ${weekLabel(state.weekKey)}</h2><p>Nouvelles combinaisons de recettes chaque lundi. Touchez un plat pour voir sa préparation.</p></div><span class="tiny-pill">1 portion = 1 adulte</span></section><div class="meal-week">${DATA.plan.map((ms,i)=>{let m=dayMacros(i);return `<article class="card day-card"><div class="day-top"><span class="day-num">${days[i]}</span><span class="day-macros">≈ ${fmt(m.cal)} kcal · P ${fmt(m.p)} g · G ${fmt(m.c)} g · L ${fmt(m.f)} g</span></div><div class="day-meals">${ms.map((key,n)=>{const r=DATA.recipes[key];return `<div class="meal-line">${mealThumb(key)}<button data-action="open-recipe" data-id="${key}"><span class="meal-label">${mnames[n]}</span><div class="meal-name">${esc(r.name)} ↗</div></button></div>`}).join('')}</div></article>`}).join('')}</div>`}
 function archivesView(){
  const list=state.archives||[];
- if(!list.length)return '<section class="card sheet"><h2>🗂️ Archives des recettes</h2><p>Les anciens menus seront conservés ici automatiquement au premier passage à une nouvelle semaine, jusqu’à 52 semaines sur cet appareil.</p></section>';
- return '<section class="section-head"><div><h2>🗂️ Semaines précédentes</h2><p>Retrouvez vos recettes et réutilisez un ancien menu.</p></div><span class="tiny-pill">'+list.length+' semaine(s)</span></section>'+list.map((a,i)=>
-  '<article class="card sheet" style="margin-bottom:13px"><div class="spread"><h3 style="margin:0">Semaine du '+esc(weekLabel(a.key))+'</h3><button class="btn btn-light btn-small" data-action="restore-archive" data-index="'+i+'">↺ Reprendre ce menu</button></div><details style="margin-top:12px"><summary style="cursor:pointer">Voir les 7 jours et les recettes</summary><div style="padding-top:12px">'+a.plan.map((day,n)=>'<div style="padding:10px 0;border-top:1px solid #edf0e9"><b>'+days[n]+'</b><div>'+day.map(k=>'<button class="linkbtn" style="margin:6px 9px 0 0" data-action="open-recipe" data-id="'+esc(k)+'">'+esc(DATA.recipes[k].name)+' ↗</button>').join('')+'</div></div>').join('')+'</div></details></article>').join('');
+ if(!list.length)return '<section class="card sheet"><h2>🗂️ Archives des recettes</h2><p>Les anciens menus seront conservés ici automatiquement au premier passage à une nouvelle semaine, jusqu’à 52 semaines. Après connexion, les archives sont aussi sauvegardées sur le serveur familial.</p></section>';
+ return '<section class="section-head"><div><h2>🗂️ Semaines précédentes</h2><p>Les menus sont conservés sur le serveur familial après connexion, et restent disponibles sur cet appareil.</p></div><span class="tiny-pill">'+list.length+' semaine(s)</span></section>'+list.map((a,i)=>
+  '<article class="card sheet" style="margin-bottom:13px"><div class="spread"><h3 style="margin:0">Semaine du '+esc(weekLabel(a.key))+'</h3><button class="btn btn-light btn-small" data-action="restore-archive" data-index="'+i+'">↺ Reprendre ce menu</button></div><details style="margin-top:12px"><summary style="cursor:pointer">Voir les 7 jours et les recettes</summary><div style="padding-top:12px">'+a.plan.map((day,n)=>'<div style="padding:10px 0;border-top:1px solid #edf0e9"><b>'+days[n]+'</b><div>'+day.map(k=>'<button class="linkbtn" style="margin:6px 9px 0 0" data-action="open-recipe" data-id="'+esc(k)+'">'+(a.starred_recipes?.includes(k)?'⭐ ':'')+esc(DATA.recipes[k]?.name||a.recipes?.[k]?.name||k)+(a.completed_recipes?.includes(k)?' ✅ Faite':' ⏳ À faire')+' ↗</button>').join('')+'</div></div>').join('')+'</div></details></article>').join('');
 }
 function stats(){return `<div class="stats"><div class="stat"><div class="lab">Objectif calories</div><div class="num">1 900</div><div class="sml">kcal / adulte / jour</div></div><div class="stat"><div class="lab">Protéines visées</div><div class="num">130 g</div><div class="sml">par jour</div></div><div class="stat"><div class="lab">Glucides visés</div><div class="num">180 g</div><div class="sml">par jour</div></div><div class="stat"><div class="lab">Lipides visés</div><div class="num">75 g</div><div class="sml">par jour</div></div></div>`}
 function aiBanner(){
@@ -384,7 +431,7 @@ function purchaseFilters(){
   <div class="purchase-filter-options">${options.map(o=>`<label class="purchase-filter-option"><input type="radio" name="purchase-filter" value="${o.value}" ${ui.filter===o.value?'checked':''}><span>${ui.filter===o.value?'✓ ':''}${o.label}</span><span class="filter-count">${o.count}</span></label>`).join('')}</div>
  </div>`;
 }
-function shoppingSection(){const p=progress();return `<div id="family-sync-panel"></div><section class="share-feature" aria-label="Partager la liste de courses"><div class="share-feature-copy"><span class="share-eyebrow">À ENVOYER À VOTRE FAMILLE</span><h3>📤 Partager la liste de courses</h3><p>Envoie les produits et leurs quantités sur WhatsApp, Messages ou par copier-coller.</p></div><button class="btn share-feature-btn" data-action="share" aria-label="Partager toute la liste de courses">📤 Partager la liste maintenant <span aria-hidden="true">↗</span></button></section><div class="section-head"><div><h2>La liste à cocher</h2><p>Quantités estimées d’après les recettes pour 7 jours et ${state.people} personne(s), pas les tailles de paquets. Coche un article uniquement après l’avoir acheté.</p></div>${personControl()}</div><div class="card sheet"><div class="spread"><div><b>${p.done} produit(s) achetés sur ${p.total}</b><div class="muted small">Vos coches restent locales jusqu’à la connexion familiale.</div></div><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager</button></div><div class="progressbar" role="progressbar" aria-valuenow="${p.done}" aria-valuemax="${p.total}"><span style="width:${p.total?p.done/p.total*100:0}%"></span></div><div class="store-priority-note">🏪 <b>Choisis le magasin de chaque article</b> directement dans le menu « Magasin choisi ». Par défaut : Lidl La Destrousse, puis Aldi La Bouilladisse, puis Netto La Destrousse. <span>⚠ Les stocks et les prix locaux ne sont pas vérifiés.</span></div>${purchaseFilters()}<div class="controls"><input type="search" id="search" placeholder="🔎 Rechercher un produit…" aria-label="Rechercher un produit" value="${esc(ui.search)}"><select id="store-filter" aria-label="Filtrer par magasin"><option>Tous les magasins</option>${chosen().map(s=>`<option value="${s.id}"${ui.shopFilter===s.id?' selected':''}>${esc(s.name)} — ${esc(s.town)}</option>`).join('')}</select><label class="toggle"><input id="photo-toggle" type="checkbox" ${state.photos?'checked':''}> Photos</label></div><div id="list-results">${listResults()}</div><div class="divider" style="height:1px;background:#ecf1eb;margin-top:14px"></div><div class="section-head"><div><h2 style="font-size:17px">Ajouter un produit</h2><p>Pour les articles qui ne figurent pas dans les recettes.</p></div></div><form id="manual-form" class="manual-add"><input class="field" id="manual-name" required maxlength="70" placeholder="Ex : café, lessive, pain…" aria-label="Nom du produit"><input class="field" id="manual-qty" maxlength="40" placeholder="Quantité (ex : 2 paquets)" aria-label="Quantité"><button class="btn" type="submit">+ Ajouter</button></form><div class="mini-links"><button class="btn btn-outline btn-small" data-action="reset-checked">↺ Réinitialiser les coches</button><button class="btn btn-outline btn-small" data-action="copy-list">📋 Copier le texte</button><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager la liste</button><button class="btn btn-outline btn-small" data-action="share-link">🔗 Lien pour importer</button></div></div><p class="caption" style="margin-top:12px">⚠️ Les photos servent de repères visuels : ce sont des illustrations génériques, pas des photos des emballages vendus par chaque enseigne.</p>`}
+function shoppingSection(){const p=progress();return `<div id="family-sync-panel"></div><section class="share-feature" aria-label="Partager la liste de courses"><div class="share-feature-copy"><span class="share-eyebrow">À ENVOYER À VOTRE FAMILLE</span><h3>📤 Partager la liste de courses</h3><p>Envoie les produits et leurs quantités sur WhatsApp, Messages ou par copier-coller.</p></div><button class="btn share-feature-btn" data-action="share" aria-label="Partager toute la liste de courses">📤 Partager la liste maintenant <span aria-hidden="true">↗</span></button></section><div class="section-head"><div><h2>La liste à cocher</h2><p>Quantités estimées d’après les recettes pour 7 jours et ${state.people} personne(s), pas les tailles de paquets. Coche un article uniquement après l’avoir acheté.</p></div>${personControl()}</div><div class="card sheet"><div class="spread"><div><b>${p.done} produit(s) achetés sur ${p.total}</b><div class="muted small">Vos coches restent locales jusqu’à la connexion familiale.</div></div><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager</button></div><div class="progressbar" role="progressbar" aria-valuenow="${p.done}" aria-valuemax="${p.total}"><span style="width:${p.total?p.done/p.total*100:0}%"></span></div><div class="store-priority-note">🏪 <b>Choisis le magasin de chaque article</b> directement dans le menu « Magasin choisi ». Par défaut : Lidl, Aldi, Netto, puis Intermarché. Marque « pas disponible » à côté d’un produit pour essayer un autre magasin. <span>⚠ Les stocks et les prix locaux ne sont pas vérifiés.</span></div>${purchaseFilters()}<div class="controls"><input type="search" id="search" placeholder="🔎 Rechercher un produit…" aria-label="Rechercher un produit" value="${esc(ui.search)}"><select id="store-filter" aria-label="Filtrer par magasin"><option>Tous les magasins</option>${chosen().map(s=>`<option value="${s.id}"${ui.shopFilter===s.id?' selected':''}>${esc(s.name)} — ${esc(s.town)}</option>`).join('')}</select><label class="toggle"><input id="photo-toggle" type="checkbox" ${state.photos?'checked':''}> Photos</label></div><div id="list-results">${listResults()}</div><div class="divider" style="height:1px;background:#ecf1eb;margin-top:14px"></div><div class="section-head"><div><h2 style="font-size:17px">Ajouter un produit</h2><p>Pour les articles qui ne figurent pas dans les recettes.</p></div></div><form id="manual-form" class="manual-add"><input class="field" id="manual-name" required maxlength="70" placeholder="Ex : café, lessive, pain…" aria-label="Nom du produit"><input class="field" id="manual-qty" maxlength="40" placeholder="Quantité (ex : 2 paquets)" aria-label="Quantité"><button class="btn" type="submit">+ Ajouter</button></form><div class="mini-links"><button class="btn btn-outline btn-small" data-action="reset-checked">↺ Réinitialiser les coches</button><button class="btn btn-outline btn-small" data-action="copy-list">📋 Copier le texte</button><button class="btn share-secondary btn-small" data-action="share" aria-label="Partager la liste de courses">📤 Partager la liste</button><button class="btn btn-outline btn-small" data-action="share-link">🔗 Lien pour importer</button></div></div><p class="caption" style="margin-top:12px">⚠️ Les photos servent de repères visuels : ce sont des illustrations génériques, pas des photos des emballages vendus par chaque enseigne.</p>`}
 const aisleOrder=['Ajouts personnels','Viandes & poissons','Produits laitiers','Féculents','Fruits & légumes','Épicerie & huiles','Divers'];
 let openSwipeId=null;
 function listResults(){const a=listData().filter(x=>{const chosenStore=assigned(x.id,x.aisle);return (ui.filter==='Tous'||(ui.filter==='À acheter'?!state.checked[x.id]:!!state.checked[x.id]))&&(ui.shopFilter==='Tous les magasins'||ui.shopFilter===chosenStore)&&(!ui.search||x.name.toLowerCase().includes(ui.search.toLowerCase()))});
@@ -394,6 +441,8 @@ function itemCard(x){
  const orig=x.id,subbed=!!state.subs[orig],storesList=chosen(),selectedStore=assigned(orig,x.aisle),swipeOpen=openSwipeId===orig;
  const productRef=!x.isManual&&selectedStore?evidenceFor(x.eff,selectedStore):null;
  const reference=productRef?`<div class="retail-source">🔎 Exemple de produit référencé : <a href="${esc(productRef.url)}" target="_blank" rel="noopener noreferrer">${esc(productRef.name)} ↗</a><small>Fiche descriptive seulement · La présence dans ce magasin n’est pas vérifiée.</small></div>`:'';
+ const reported=Array.isArray(state.storeUnavailable[orig])?state.storeUnavailable[orig]:[];
+ const unavailableControls=`<div class="unavailable-panel"><span class="unavailable-label">🚫 Pas disponible chez :</span><div class="unavailable-options">${[['lidl-destrousse','Lidl'],['aldi','Aldi'],['netto','Netto'],['inter','Intermarché']].map(([id,name])=>`<button type="button" class="unavailable-chip ${reported.includes(id)?'marked':''}" data-action="toggle-unavailable" data-id="${esc(orig)}" data-storeid="${id}" aria-pressed="${reported.includes(id)}" aria-label="Signaler ${esc(x.name)} indisponible chez ${name}">${reported.includes(id)?'☑':'☐'} ${name}</button>`).join('')}</div></div>`;
  const storeSelect=storesList.length?`<label class="store-choice-label" for="store-choice-${esc(orig)}">🏪 Magasin choisi</label><select id="store-choice-${esc(orig)}" class="store-assign" data-assign="${esc(orig)}" aria-label="Choisir le magasin pour ${esc(x.name)}">${storesList.map(s=>`<option value="${s.id}" ${s.id===selectedStore?'selected':''}>${esc(s.name)} · ${esc(s.town)}</option>`).join('')}</select>`:'';
  const card=`<article class="item-card ${state.checked[orig]?'done':''} ${x.isManual?'manual-swipe-content':''}" data-product="${esc(orig)}">
   <input class="product-check" type="checkbox" data-check="${esc(orig)}" aria-label="Acheté : ${esc(x.name)}" ${state.checked[orig]?'checked':''}>
@@ -401,6 +450,7 @@ function itemCard(x){
   <div class="prod-main"><div class="prod-name">${esc(x.name)}</div><div class="prod-qty">${x.isManual?esc(x.qty||'À acheter'):gram(x.g,x.eff)}</div>
    ${x.isManual?'<span class="swipe-mini-hint">← Glisser pour supprimer</span>':`<div class="prod-actions"><button class="linkbtn" data-action="toggle-sub" data-id="${esc(orig)}">${ui.openSub===orig?'Fermer':subbed?'↺ Modifier le remplacement':'⇄ Remplacer l’ingrédient'}</button>${subbed?`<span class="store-tag">À la place : ${esc(DATA.ingredients[orig].name)}</span>`:''}</div>`}
    ${chosen().length?`<div class="store-choice-wrap">${storeSelect}</div>`:''}
+   ${unavailableControls}
    ${reference}
    ${ui.openSub===orig&&!x.isManual?subPanel(orig):''}
   </div>
@@ -413,19 +463,28 @@ function itemCard(x){
  </div>`;
 }
 function subPanel(id){const info=DATA.ingredients[id];return `<div class="sub-panel"><b class="small">Choisir un autre ingrédient pour la recette :</b><div class="sub-options">${info.subs.map(s=>`<button class="subbtn" data-action="choose-sub" data-id="${id}" data-sub="${s}">${esc(DATA.ingredients[s].name)}</button>`).join('')}${state.subs[id]?`<button class="subbtn" data-action="choose-sub" data-id="${id}" data-sub="">↺ Produit d'origine</button>`:''}</div><div class="small muted" style="margin-top:7px">Même quantité indicative. Les valeurs nutritionnelles peuvent changer.</div></div>`}
-function recipeCard(key){const r=DATA.recipes[key],m=mealMacros(key);const ids=r.items.filter(it=>it.id!=='huile').slice(0,2).map(x=>state.subs[x.id]||x.id);return `<button class="card recipe-card" data-action="open-recipe" data-id="${key}"><div class="recipe-pics">${r.photo?mealThumb(key,'ai-card-photo'):ids.map(id=>img(id,src(id)?'prod-img':'prod-emoji')).join('')}</div><div class="recipe-info"><span class="tiny-pill">${r.meal}</span><h3>${esc(r.name)}</h3><p>⏱️ ${esc(r.time)} · 1 portion</p><div class="macros">≈ ${fmt(m.cal)} kcal · ${fmt(m.p)} g protéines</div></div></button>`}
-function recipesView(){let keys=Object.keys(DATA.recipes).filter(k=>ui.recipeFilter==='Tous'||DATA.recipes[k].meal===ui.recipeFilter);return `<div class="section-head"><div><h2>Idées de recettes</h2><p>Les repas de la semaine, réalisables avec votre panier.</p></div></div><div class="store-filters">${['Tous','Petit-déjeuner','Déjeuner','Collation','Dîner'].map(c=>`<button class="chip ${ui.recipeFilter===c?'active':''}" data-action="recipe-filter" data-filter="${c}">${c}</button>`).join('')}</div><div class="recipe-grid">${keys.map(recipeCard).join('')}</div>`}
+function starButton(key,extraClass=''){
+ const starred=!!state.favorites[key];
+ return `<button type="button" class="recipe-star ${extraClass} ${starred?'starred':''}" data-action="toggle-star" data-id="${esc(key)}" aria-pressed="${starred}" aria-label="${starred?'Retirer des favoris':'Ajouter aux favoris'} : ${esc(DATA.recipes[key]?.name||key)}" title="${starred?'Retirer des favoris':'Mettre en favori'}">${starred?'★':'☆'}</button>`;
+}
+function progressCheckbox(key){
+ const done=!!state.recipeDone[key];
+ return `<label class="recipe-done-label"><input type="checkbox" data-recipe-done="${esc(key)}" aria-label="Recette faite : ${esc(DATA.recipes[key]?.name||key)}" ${done?'checked':''}><span>${done?'Faite':'À faire'}</span></label>`;
+}
+function recipeCard(key){const r=DATA.recipes[key],m=mealMacros(key);const ids=r.items.filter(it=>it.id!=='huile').slice(0,2).map(x=>state.subs[x.id]||x.id);return `<div class="recipe-card-shell"><button class="card recipe-card" data-action="open-recipe" data-id="${esc(key)}"><div class="recipe-pics">${r.photo?mealThumb(key,'ai-card-photo'):ids.map(id=>img(id,src(id)?'prod-img':'prod-emoji')).join('')}</div><div class="recipe-info"><span class="tiny-pill">${r.meal}</span><h3>${esc(r.name)}</h3><p>⏱️ ${esc(r.time)} · 1 portion</p><div class="macros">≈ ${fmt(m.cal)} kcal · ${fmt(m.p)} g protéines</div></div></button><div class="recipe-tools">${starButton(key)}${progressCheckbox(key)}</div></div>`}
+function recipesView(){let keys=Object.keys(DATA.recipes).filter(k=>ui.recipeFilter==='Tous'||(ui.recipeFilter==='⭐ Favoris'?!!state.favorites[k]:ui.recipeFilter==='À faire'?!state.recipeDone[k]:ui.recipeFilter==='Faites'?!!state.recipeDone[k]:DATA.recipes[k].meal===ui.recipeFilter));return `<div class="section-head"><div><h2>Idées de recettes</h2><p>Appuie sur ☆ pour conserver tes recettes favorites avec la famille.</p></div></div><div class="store-filters">${['Tous','⭐ Favoris','À faire','Faites','Petit-déjeuner','Déjeuner','Collation','Dîner'].map(c=>`<button class="chip ${ui.recipeFilter===c?'active':''}" data-action="recipe-filter" data-filter="${c}">${c}</button>`).join('')}</div><div class="recipe-grid">${keys.length?keys.map(recipeCard).join(''):`<div class="card sheet">${ui.recipeFilter==='⭐ Favoris'?'Aucun favori. Appuie sur ☆ à côté d’une recette.':ui.recipeFilter==='Faites'?'Aucune recette marquée « Faite ».':'Aucune recette dans ce filtre.'}</div>`}</div>`}
 function retailStatus(){
  if(!retailCatalog)return '<div class="retail-catalog-note">📦 Catalogue des produits : première synchronisation en attente. Les menus restent accessibles sans données externes. <a href="https://github.com/jaycikomo/mon-panier/actions/workflows/catalogue-enseignes.yml" target="_blank" rel="noopener noreferrer">Actualiser gratuitement ↗</a></div>';
  const count=Object.keys(retailCatalog.evidence||{}).length;
  const date=retailCatalog.updated?new Date(retailCatalog.updated).toLocaleDateString('fr-FR'):'';
  return '<div class="retail-catalog-note">🔎 <b>'+count+' ingrédients avec au moins un exemple de fiche produit</b> · '+(Number(retailCatalog.official_count)||0)+' fiches directes sur sites officiels'+(retailCatalog.community_count?', '+retailCatalog.community_count+' fiches Open Food Facts':'')+(date?' · catalogue actualisé le '+esc(date):'')+'. <b>Références partielles :</b> une absence de fiche, notamment chez Netto, ne signifie pas que le produit manque dans le magasin. <b>Stock et prix locaux inconnus.</b></div>';
 }
-function storesView(){return `<div class="section-head"><div><h2>Magasins, marchés & supérettes</h2><p>Choisissez vos lieux. La liste de courses vous permet ensuite d'assigner chaque article.</p></div><span class="tiny-pill">${chosen().length} sélectionné(s)</span></div><div class="store-priority-note">🏪 <b>Ordre de priorité :</b> Lidl La Destrousse → Aldi La Bouilladisse → Netto La Destrousse. Intermarché reste en option si tu le sélectionnes. Référencement uniquement, pas de stock en temps réel.</div>${retailStatus()}${storeFilters()}${storeCards()}<div class="notice notice-amber" style="margin-top:17px">📅 <b>Marché du jeudi :</b> jeudi 8h–12h, place de la Mairie. <b>Nouveau marché du samedi :</b> à partir du 7 novembre 2026, 8h30–13h. Vérifiez les horaires auprès des commerçants, en particulier les jours fériés.</div>`}
-function modal(){if(!ui.modal)return '';const key=ui.modal,r=DATA.recipes[key];if(!r)return '';const m=mealMacros(key);return `<div class="modal-overlay" data-action="close-modal-overlay"><section class="modal" role="dialog" aria-modal="true" aria-label="${esc(r.name)}"><div class="modal-top"><div><span class="tiny-pill">${esc(r.meal)} · ${esc(r.time)}</span><h2 style="margin-top:12px">${esc(r.name)}</h2><p>Pour <b>1 personne</b> · ≈ ${fmt(m.cal)} kcal · P ${fmt(m.p)} g · G ${fmt(m.c)} g · L ${fmt(m.f)} g</p></div><button class="close" data-action="close-modal" aria-label="Fermer">×</button></div>${r.photo&&state.photos?'<div class="ai-modal-photo">'+mealThumb(key,'ai-modal-img')+'</div>':''}<h3 style="font-size:15px;margin:22px 0 7px">🧺 Ingrédients par personne</h3>${r.items.map(({id,g})=>{const effective=state.subs[id]||id,inf=DATA.ingredients[effective];return `<div class="ingredient-line">${img(effective,src(effective)?'prod-img':'prod-emoji')}<span class="nm">${esc(inf.name)}${id!==effective?` <span class="small muted">(remplacement)</span>`:''}</span><span class="qty">${gram(g,effective)}</span></div>`}).join('')}<div class="step" style="margin-top:19px"><div class="step-title">👩‍🍳 Comment préparer ?</div><p style="margin:0;color:#405f4b">${esc(r.steps)}</p></div><div class="notice" style="margin-top:12px">Pour ${state.people} personnes, multipliez les quantités par ${state.people}. Les produits ont déjà été regroupés dans la liste de courses.</div><div class="modal-footer"><button class="btn btn-light" data-action="close-modal">Fermer</button><button class="btn" data-action="go-shop-from-recipe">Voir la liste →</button></div></section></div>`}
-function footer(){return `<footer class="ft">Fait pour votre famille à La Bouilladisse · Photos d’aliments illustratives · Menus et archives conservés sur cet appareil ; achats synchronisés après connexion familiale<br>Les macros restent indicatives, surtout après une substitution.</footer>`}
-function main(){return `${header()}<main class="shell main">${hero()}${ui.tab==='plan'?planView():ui.tab==='courses'?shoppingSection():ui.tab==='recettes'?recipesView():ui.tab==='archives'?archivesView():storesView()}${footer()}</main>${ui.tab==='courses'?`<div class="mobile-share-dock" role="group" aria-label="Partager ou importer la liste"><button class="mobile-share-primary" data-action="share">📤 Partager la liste</button><button class="mobile-share-import" data-action="share-link">🔗 Lien d’import</button></div>`:`<button class="btn fab" data-action="goto" data-tab="courses">🛒 Ouvrir ma liste de courses</button>`}${modal()}`}
-function render(){rollover();el('app').innerHTML=state.ready?main():setup();window.dispatchEvent(new Event('mon-panier:render'))}
+function storesView(){return `<div class="section-head"><div><h2>Magasins, marchés & supérettes</h2><p>Choisissez vos lieux. La liste de courses vous permet ensuite d'assigner chaque article.</p></div><span class="tiny-pill">${chosen().length} sélectionné(s)</span></div><div class="store-priority-note">🏪 <b>Ordre de priorité :</b> Lidl La Destrousse → Aldi La Bouilladisse → Netto La Destrousse → Intermarché La Destrousse. Référencement uniquement, pas de stock en temps réel.</div>${retailStatus()}${storeFilters()}${storeCards()}<div class="notice notice-amber" style="margin-top:17px">📅 <b>Marché du jeudi :</b> jeudi 8h–12h, place de la Mairie. <b>Nouveau marché du samedi :</b> à partir du 7 novembre 2026, 8h30–13h. Vérifiez les horaires auprès des commerçants, en particulier les jours fériés.</div>`}
+function modal(){if(!ui.modal)return '';const key=ui.modal,r=DATA.recipes[key];if(!r)return '';const m=mealMacros(key);return `<div class="modal-overlay" data-action="close-modal-overlay"><section class="modal" role="dialog" aria-modal="true" aria-label="${esc(r.name)}"><div class="modal-top"><div><span class="tiny-pill">${esc(r.meal)} · ${esc(r.time)}</span><h2 style="margin-top:12px">${esc(r.name)}</h2>${starButton(key,'modal-star')}${progressCheckbox(key)}<p>Pour <b>1 personne</b> · ≈ ${fmt(m.cal)} kcal · P ${fmt(m.p)} g · G ${fmt(m.c)} g · L ${fmt(m.f)} g</p></div><button class="close" data-action="close-modal" aria-label="Fermer">×</button></div>${r.photo&&state.photos?'<div class="ai-modal-photo">'+mealThumb(key,'ai-modal-img')+'</div>':''}<h3 style="font-size:15px;margin:22px 0 7px">🧺 Ingrédients par personne</h3>${r.items.map(({id,g})=>{const effective=state.subs[id]||id,inf=DATA.ingredients[effective];return `<div class="ingredient-line">${img(effective,src(effective)?'prod-img':'prod-emoji')}<span class="nm">${esc(inf.name)}${id!==effective?` <span class="small muted">(remplacement)</span>`:''}</span><span class="qty">${gram(g,effective)}</span></div>`}).join('')}<div class="step" style="margin-top:19px"><div class="step-title">👩‍🍳 Comment préparer ?</div><p style="margin:0;color:#405f4b">${esc(r.steps)}</p></div><div class="notice" style="margin-top:12px">Pour ${state.people} personnes, multipliez les quantités par ${state.people}. Les produits ont déjà été regroupés dans la liste de courses.</div><div class="modal-footer"><button class="btn btn-light" data-action="close-modal">Fermer</button><button class="btn" data-action="go-shop-from-recipe">Voir la liste →</button></div></section></div>`}
+function footer(){return `<footer class="ft">Fait pour votre famille à La Bouilladisse · Photos d’aliments illustratives · Menus et favoris disponibles localement ; archives, favoris et achats synchronisés sur le serveur familial après connexion<br>Les macros restent indicatives, surtout après une substitution.</footer>`}
+function accountView(){return `<section class="section-head"><div><h2>👤 Mon compte</h2><p>Retrouve ton espace familial : connexion, invitations et synchronisation.</p></div></section><div id="family-sync-panel"></div><div class="card sheet"><h3>🔒 Données de votre famille</h3><p>La liste de courses, les favoris et les anciennes recettes sont enregistrés sur le serveur familial après connexion. Sans compte, tes données restent sur cet appareil.</p></div>`}
+function main(){return `${header()}<main class="shell main">${hero()}${ui.tab==='plan'?planView():ui.tab==='courses'?shoppingSection():ui.tab==='recettes'?recipesView():ui.tab==='archives'?archivesView():ui.tab==='compte'?accountView():storesView()}${footer()}</main>${ui.tab==='courses'?`<div class="mobile-share-dock" role="group" aria-label="Partager ou importer la liste"><button class="mobile-share-primary" data-action="share">📤 Partager la liste</button><button class="mobile-share-import" data-action="share-link">🔗 Lien d’import</button></div>`:`<button class="btn fab" data-action="goto" data-tab="courses">🛒 Ouvrir ma liste de courses</button>`}${modal()}`}
+function render(){rollover();el('app').innerHTML=main();window.dispatchEvent(new Event('mon-panier:render'))}
 function updateResults(){const target=el('list-results');if(target)target.innerHTML=listResults()}
 function rerenderShopping(){if(ui.tab==='courses'){render()}else render()}
 function changeStore(id){const ix=state.stores.indexOf(id);if(ix!==-1)state.stores.splice(ix,1);else state.stores.push(id);store();render()}
@@ -518,11 +577,26 @@ document.addEventListener('click',e=>{
  if(action==='external')return;
  if(action==='toggle-store-card'){if(e.target.closest('a')||e.target.closest('input'))return;changeStore(t.dataset.id);return}
  if(action==='goto'){ui.tab=t.dataset.tab;ui.modal=null;render();window.scrollTo({top:0,behavior:'smooth'});return}
- if(action==='finish-setup'){state.ready=true;store();ui.tab='plan';render();scrollTo({top:0});return}
  if(action==='storetype'){ui.shopType=t.dataset.type;render();return}
  if(action==='minus-person'||action==='plus-person'){state.people=Math.max(1,Math.min(8,state.people+(action==='plus-person'?1:-1)));store();render();return}
  if(action==='toggle-sub'){ui.openSub=ui.openSub===t.dataset.id?null:t.dataset.id;updateResults();return}
  if(action==='choose-sub'){if(t.dataset.sub)state.subs[t.dataset.id]=t.dataset.sub;else delete state.subs[t.dataset.id];delete state.checked[t.dataset.id];ui.openSub=null;store();render();window.MonPanierFamily?.recordChange(t.dataset.id,false);notify('Liste et nutrition actualisées');return}
+ if(action==='toggle-unavailable'){
+  const key=t.dataset.id,id=t.dataset.storeid;
+  if(!['lidl-destrousse','aldi','netto','inter'].includes(id))return;
+  const set=new Set(state.storeUnavailable[key]||[]);
+  if(set.has(id))set.delete(id);else set.add(id);
+  state.storeUnavailable[key]=[...set];store();render();
+  window.MonPanierFamily?.recordChange(key,false);
+  notify(set.has(id)?'Magasin signalé indisponible':'Signalement retiré');
+  return;
+ }
+ if(action==='toggle-star'){
+  const key=t.dataset.id;if(!DATA.recipes[key])return;
+  const starred=!state.favorites[key];state.favorites[key]=starred;
+  store();render();window.MonPanierFamily?.setFavorite(key,starred);
+  return;
+ }
  if(action==='recipe-filter'){ui.recipeFilter=t.dataset.filter;render();return}
  if(action==='open-recipe'){ui.modal=t.dataset.id;render();return}
  if(action==='close-modal'){ui.modal=null;render();return}
@@ -530,15 +604,22 @@ document.addEventListener('click',e=>{
  if(action==='go-shop-from-recipe'){ui.modal=null;ui.tab='courses';render();window.scrollTo({top:0});return}
  if(action==='share'){share();return}
  if(action==='share-link'){shareLink();return}
- if(action==='restore-archive'){const old=state.archives[Number(t.dataset.index)];if(old&&isValidPlan(old.plan)&&confirm('Remplacer le menu de cette semaine par ce menu archivé ? La liste actuelle sera remise à zéro.')){state.weekPlan=old.plan.map(x=>x.slice());state.checked={};state.manual=[];store();ui.tab='plan';render();notify('Menu archivé réutilisé !')}return}
+ if(action==='restore-archive'){const old=state.archives[Number(t.dataset.index)];if(old&&isValidPlan(old.plan)&&confirm('Remplacer le menu de cette semaine par ce menu archivé ? La liste actuelle sera remise à zéro.')){state.weekPlan=old.plan.map(x=>x.slice());DATA.plan=state.weekPlan;state.checked={};state.manual=[];state.familyMenuDirty=true;store();ui.tab='plan';render();window.MonPanierFamily?.recordMenuChange();notify('Menu archivé réutilisé !')}return}
  if(action==='copy-list'){copyList();return}
  if(action==='toggle-manual-swipe'){openSwipeId=openSwipeId===t.dataset.id?null:t.dataset.id;applySwipeState();return}
- if(action==='delete-manual'){const id=t.dataset.id;if(!state.manual.some(x=>x.id===id))return;state.manual=state.manual.filter(x=>x.id!==id);delete state.checked[id];delete state.assign[id];openSwipeId=null;store();render();window.MonPanierFamily?.recordChange(id,true);notify('Produit supprimé des courses en plus');return}
+ if(action==='delete-manual'){const id=t.dataset.id;if(!state.manual.some(x=>x.id===id))return;state.manual=state.manual.filter(x=>x.id!==id);delete state.checked[id];delete state.assign[id];delete state.storeUnavailable[id];openSwipeId=null;store();render();window.MonPanierFamily?.recordChange(id,true);notify('Produit supprimé des courses en plus');return}
  if(action==='reset-checked'){if(confirm('Remettre tous les articles en « à acheter » ?')){const ids=Object.keys(state.checked);state.checked={};store();render();ids.forEach(id=>window.MonPanierFamily?.recordChange(id,false));notify('Liste réinitialisée')}return}
 });
 document.addEventListener('change',e=>{
  const t=e.target;
  if(t.matches('[data-store]')){changeStore(t.dataset.store);return}
+ if(t.matches('[data-recipe-done]')){
+   const key=t.dataset.recipeDone;
+   if(!DATA.recipes[key])return;
+   state.recipeDone[key]=t.checked;
+   store();render();window.MonPanierFamily?.recordRecipeDone(key,t.checked);
+   return;
+ }
  if(t.matches('[data-check]')){if(t.checked)state.checked[t.dataset.check]=true;else delete state.checked[t.dataset.check];store();render();window.MonPanierFamily?.recordChange(t.dataset.check,false);return}
  if(t.matches('[data-assign]')){if(chosen().some(s=>s.id===t.value))state.assign[t.dataset.assign]=t.value;
   store();updateResults();window.MonPanierFamily?.recordChange(t.dataset.assign,false);return}
@@ -555,25 +636,87 @@ window.MonPanierFamilyAdapter={
  rows:()=>listData().map(item=>({
    key:item.id,name:item.name,quantity_text:item.isManual?(item.qty||''):gram(item.g,item.eff),
    store_name:assigned(item.id,item.aisle),is_bought:!!state.checked[item.id],
+   unavailable_stores:(state.storeUnavailable[item.id]||[]).filter(id=>['aldi','lidl-destrousse','netto','inter'].includes(id)),
    is_manual:!!item.isManual
  })),
+ favorites:()=>Object.fromEntries(Object.entries(state.favorites).filter(([key,value])=>value&&DATA.recipes[key])),
+ progress:()=>Object.fromEntries(Object.entries(state.recipeDone).filter(([key,value])=>value&&DATA.recipes[key])),
+ applyProgress:rows=>{
+   state.recipeDone=Object.fromEntries((rows||[]).filter(r=>r.is_done).map(r=>[r.recipe_key,true]));
+   store();render();
+ },
+ isAccountPage:()=>ui.tab==='compte',
+ openAccount:()=>{ui.tab='compte';state.ready=true;store();render();},
+ menuDirty:()=>!!state.familyMenuDirty,
+ currentMenu:()=>{
+   const recipes={};
+   for(const key of new Set(state.weekPlan.flat())){
+     const source=DATA.recipes[key];
+     if(source){const {photo,...definition}=source;recipes[key]=definition;}
+   }
+   return {plan:state.weekPlan.map(day=>day.slice()),recipes};
+ },
+ applyMenu:row=>{
+   if(!row?.plan||!row.recipes)return false;
+   for(const [key,recipe] of Object.entries(row.recipes)){
+     if(recipe&&Array.isArray(recipe.items)&&recipe.items.every(i=>DATA.ingredients[i.id]))
+       DATA.recipes[key]=recipe;
+   }
+   if(!isValidPlan(row.plan))return false;
+   state.weekPlan=row.plan.map(day=>day.slice());
+   DATA.plan=state.weekPlan;
+   state.familyMenuWeek=state.weekKey;state.aiApplied=state.weekKey;state.familyMenuDirty=false;
+   store();render();return true;
+ },
+ markMenuSaved:()=>{state.familyMenuWeek=state.weekKey;state.familyMenuDirty=false;store();},
+ applyFavorites:rows=>{
+   state.favorites=Object.fromEntries((rows||[]).filter(r=>r.starred).map(r=>[r.recipe_key,true]));
+   store();render();
+ },
+ archives:()=>state.archives.slice(),
+ archivePayload:archive=>{
+   const recipes={};
+   for(const id of new Set((archive.plan||[]).flat())){
+     const source=archive.recipes?.[id]||DATA.recipes[id];
+     if(source){const {photo,...definition}=source;recipes[id]=definition;}
+   }
+   return {plan:archive.plan,recipes,
+     completed_recipes:archive.completed_recipes||[],starred_recipes:archive.starred_recipes||[]};
+ },
+ applyArchives:rows=>{
+   const restored=[];
+   for(const a of rows||[]){
+     if(!Array.isArray(a.plan)||!a.recipes||typeof a.recipes!=='object')continue;
+     for(const [key,recipe] of Object.entries(a.recipes)){
+       if(recipe&&Array.isArray(recipe.items)&&recipe.items.every(i=>DATA.ingredients[i.id]))DATA.recipes[key]=recipe;
+     }
+     if(isValidPlan(a.plan))restored.push({key:a.week_key,plan:a.plan,recipes:a.recipes,
+       completed_recipes:a.completed_recipes||[],starred_recipes:a.starred_recipes||[],
+       archivedAt:a.archived_at});
+   }
+   state.archives=[...new Map([...state.archives,...restored].map(a=>[a.key,a])).values()]
+     .sort((a,b)=>b.key.localeCompare(a.key)).slice(0,52);
+   store();render();
+ },
  apply:rows=>{
    state.checked={};
+   state.storeUnavailable={};
    state.manual=rows.filter(r=>r.ingredient_key.startsWith('custom-'))
      .map(r=>({id:r.ingredient_key,name:r.name,qty:r.quantity_text,isManual:true}));
    rows.forEach(r=>{
      if(r.is_bought)state.checked[r.ingredient_key]=true;
      if(r.store_name&&stores.some(s=>s.id===r.store_name))state.assign[r.ingredient_key]=r.store_name;
+     if(Array.isArray(r.unavailable_stores))state.storeUnavailable[r.ingredient_key]=r.unavailable_stores;
    });
    store();render();
  }
 };
-load();render();loadAI();loadRetailCatalog();
+load();render();window.MonPanierAIReady=loadAI();loadRetailCatalog();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&rollover()){render();notify('Nouvelle semaine : menus et courses renouvelés !')}});
 setInterval(()=>{if(rollover()){render();notify('Nouvelle semaine : menus et courses renouvelés !')}},60*60*1000);
 
 })();
 </script>
-<script src="family-sync.js" defer></script>
+<script src="family-sync.js?v=20261101-menu-compte" defer></script>
 </body>
 </html>
