@@ -35,7 +35,9 @@
     session.token = data.access_token || '';
     session.refreshToken = data.refresh_token || '';
     if (session.token) localStorage.setItem(AUTH_KEY,session.token);
+    else localStorage.removeItem(AUTH_KEY);
     if (session.refreshToken) localStorage.setItem(REFRESH_KEY,session.refreshToken);
+    else localStorage.removeItem(REFRESH_KEY);
   }
   function clearCredentials() {
     session.token='';session.refreshToken='';
