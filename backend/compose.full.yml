@@ -29,6 +29,12 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       BOOTSTRAP_TOKEN: ${BOOTSTRAP_TOKEN}
       CORS_ORIGINS: ${CORS_ORIGINS}
+      PANIER_SMTP_HOST: ${PANIER_SMTP_HOST:-}
+      PANIER_SMTP_PORT: ${PANIER_SMTP_PORT:-587}
+      PANIER_SMTP_USER: ${PANIER_SMTP_USER:-}
+      PANIER_SMTP_PASSWORD: ${PANIER_SMTP_PASSWORD:-}
+      PANIER_SMTP_FROM: ${PANIER_SMTP_FROM:-}
+      PANIER_RESET_URL: ${PANIER_RESET_URL:-https://jaycikomo.github.io/mon-panier/}
     ports:
       - "127.0.0.1:8085:8000"
     networks: [private,edge]
