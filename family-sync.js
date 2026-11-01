@@ -4,16 +4,23 @@
   'use strict';
   const API = 'https://82.66.229.233';
   const AUTH_KEY = 'mon-panier-family-auth-v1';
+  const REFRESH_KEY = 'mon-panier-family-refresh-v1';
   const LINK_KEY = 'mon-panier-family-linked-v1';
   const OUTBOX_KEY = 'mon-panier-family-outbox-v1';
   const STAR_OUTBOX_KEY = 'mon-panier-family-star-pending-v1';
   const STAR_IMPORTED_KEY = 'mon-panier-family-stars-imported-v1';
+  const PROGRESS_OUTBOX_KEY = 'mon-panier-recipe-progress-outbox-v1';
+  const PROGRESS_IMPORTED_KEY = 'mon-panier-recipe-progress-imported-v1';
   const adapter = window.MonPanierFamilyAdapter;
+  let resetCode = new URLSearchParams(window.location.hash.slice(1)).get('reset');
   if (!adapter) return;
+  if (resetCode) adapter.openAccount();
 
-  const session = { token: localStorage.getItem(AUTH_KEY) || '', household: null,
+  const session = { token: localStorage.getItem(AUTH_KEY) || '',
+    refreshToken: localStorage.getItem(REFRESH_KEY) || '', household: null,
     profile: null, mode: 'offline', message: '', invitation: '', lastEvent: 0,
-    versions: {}, busy: false, pending: new Set(), queued: new Set(), generations: new Map(), favoritePending: {}, favoriteFlushing: false };
+    versions: {}, busy: false, pending: new Set(), queued: new Set(), generations: new Map(), favoritePending: {}, favoriteFlushing: false, menuVersion: null, menuSaving: false,
+    progressPending: {}, progressFlushing: false };
 
   function escapeHTML(value) {
     return String(value == null ? '' : value).replace(/[&<>"']/g, ch =>
@@ -24,7 +31,37 @@
   function householdPath(path) {
     return '/api/households/' + encodeURIComponent(session.household.id) + path;
   }
-  async function request(path, method, payload) {
+  function keepSession(data) {
+    session.token = data.access_token || '';
+    session.refreshToken = data.refresh_token || '';
+    if (session.token) localStorage.setItem(AUTH_KEY,session.token);
+    if (session.refreshToken) localStorage.setItem(REFRESH_KEY,session.refreshToken);
+  }
+  function clearCredentials() {
+    session.token='';session.refreshToken='';
+    localStorage.removeItem(AUTH_KEY);localStorage.removeItem(REFRESH_KEY);
+  }
+  let refreshing = null;
+  async function refreshAccess() {
+    if (!session.refreshToken) throw new Error('Reconnectez-vous pour activer la connexion durable.');
+    if (refreshing) return refreshing;
+    refreshing = (async () => {
+      let response;
+      try {
+        response = await fetch(API + '/api/session/refresh', {
+          method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
+          body:JSON.stringify({refresh_token:session.refreshToken}),cache:'no-store'
+        });
+      } catch (_) { throw new Error('Serveur familial injoignable : session conservée pour réessayer.'); }
+      if (!response.ok) {
+        if (response.status === 401) clearCredentials();
+        throw new Error('Renouvellement impossible : reconnectez-vous.');
+      }
+      keepSession(await response.json());
+    })();
+    try { await refreshing; } finally { refreshing=null; }
+  }
+  async function request(path, method, payload, retry=false) {
     const headers = { 'Accept': 'application/json' };
     if (payload !== undefined) headers['Content-Type'] = 'application/json';
     if (session.token) headers['Authorization'] = 'Bearer ' + session.token;
@@ -33,11 +70,16 @@
     let response;
     try { response = await fetch(API + path, options); }
     catch (_) { throw new Error('API indisponible : vérifiez Internet et le serveur familial.'); }
+    if (response.status === 401 && !retry && session.refreshToken &&
+        !['/api/login','/api/join','/api/session/refresh'].includes(path)) {
+      await refreshAccess();
+      return request(path,method,payload,true);
+    }
     let body = {};
     try { body = await response.json(); } catch (_) {}
     if (!response.ok) {
       if (response.status === 401 && !path.endsWith('/login') && !path.endsWith('/join')) {
-        session.token = ''; localStorage.removeItem(AUTH_KEY); session.mode = 'offline';
+        clearCredentials();session.mode = 'offline';
       }
       throw new Error(typeof body.detail === 'string' ? body.detail : 'Erreur HTTP ' + response.status);
     }
@@ -49,7 +91,12 @@
   function persistOutbox() {
     localStorage.setItem(OUTBOX_KEY, JSON.stringify({ key: localKey(), commands: [...session.queued] }));
   }
-  function isLinked() { return localStorage.getItem(LINK_KEY) === localKey(); }
+  function isLinked() {
+    if (!session.household) return false;
+    const marker=localStorage.getItem(LINK_KEY)||'';
+    // Compatibilite avec les anciennes associations limitees a une semaine.
+    return marker===session.household.id || marker.startsWith(session.household.id+':');
+  }
   function backup() {
     const key = 'mon-panier-before-family-' + week();
     if (!localStorage.getItem(key)) localStorage.setItem(key, adapter.backup());
@@ -72,6 +119,9 @@
     const favorites=(data.favorites||[]).filter(row=>!(row.recipe_key in session.favoritePending));
     for(const [key,starred] of Object.entries(session.favoritePending))favorites.push({recipe_key:key,starred});
     adapter.applyFavorites(favorites);
+    const progress=(data.progress||[]).filter(r=>!(r.recipe_key in session.progressPending));
+    for(const [key,done] of Object.entries(session.progressPending))progress.push({recipe_key:key,is_done:done});
+    adapter.applyProgress(progress);
     renderPanel();
   }
   function favoritePendingKey() {
@@ -140,12 +190,106 @@
       .then(()=>syncArchives())
       .catch(e=>setMessage('⚠ Archive locale conservée, envoi à reprendre : '+e.message));
   }
-  async function syncExtras() {
+  async function syncExtras(importLocal=true) {
     try {
-      await seedLocalStars();
+      if(importLocal)await seedLocalStars();
       await flushFavorites();
+      if(importLocal)await seedLocalProgress();
+      await flushProgress();
       await syncArchives();
     } catch (error) { session.message = '⚠ Archives ou favoris : '+error.message+' (les courses restent utilisables).'; }
+  }
+  function progressKey() {
+    return PROGRESS_OUTBOX_KEY+':'+session.household.id+':'+week();
+  }
+  function loadProgressPending() {
+    try{
+      const value=JSON.parse(localStorage.getItem(progressKey()));
+      session.progressPending=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+    }catch(_){session.progressPending={};}
+  }
+  function persistProgress() {
+    if(session.household)localStorage.setItem(progressKey(),JSON.stringify(session.progressPending));
+  }
+  async function flushProgress() {
+    if(!session.household||!session.token||session.progressFlushing)return;
+    session.progressFlushing=true;
+    try{
+      while(Object.keys(session.progressPending).length){
+        const [key,done]=Object.entries(session.progressPending)[0];
+        try{
+          await request(householdPath('/recipe-progress/'+week()+'/'+encodeURIComponent(key)),
+            'PUT',{is_done:Boolean(done)});
+          if(session.progressPending[key]===done)delete session.progressPending[key];
+          persistProgress();
+        }catch(e){session.message='⚠ Statut des recettes en attente : '+e.message;break;}
+      }
+    }finally{session.progressFlushing=false;}
+  }
+  function recordRecipeDone(key,done) {
+    if(!session.household)return;
+    session.progressPending[key]=Boolean(done);
+    persistProgress();
+    if(session.mode==='live')void flushProgress();
+  }
+  async function seedLocalProgress() {
+    const marker=PROGRESS_IMPORTED_KEY+':'+session.household.id+':'+week();
+    if(localStorage.getItem(marker)==='yes')return;
+    for(const key of Object.keys(adapter.progress()))
+      await request(householdPath('/recipe-progress/'+week()+'/'+encodeURIComponent(key)),'PUT',{is_done:true});
+    localStorage.setItem(marker,'yes');
+  }
+  async function syncMenu() {
+    // Attendre le menu IA de la semaine avant le premier enregistrement familial.
+    if(window.MonPanierAIReady)await Promise.race([
+      window.MonPanierAIReady,new Promise(resolve=>setTimeout(resolve,5000))
+    ]);
+    const data = await request(householdPath('/week-menus/' + week()));
+    const remote = data.menu;
+    if (remote) {
+      if (adapter.menuDirty()) {
+        session.message = '⚠ Un menu modifié sur cet appareil attend votre choix : publier ou recharger.';
+        return;
+      }
+      if (adapter.applyMenu(remote)) session.menuVersion = Number(remote.version);
+    } else {
+      const payload = adapter.currentMenu();
+      const response = await request(householdPath('/week-menus/' + week()),'PUT',
+        {...payload,expected_version:0});
+      session.menuVersion = Number(response.menu.version);
+      adapter.markMenuSaved();
+    }
+  }
+  async function publishMenu(confirmed=false) {
+    if (!session.household || session.menuSaving) return;
+    session.menuSaving = true;
+    try {
+      let expected = session.menuVersion;
+      if (confirmed || expected == null) {
+        const remote = await request(householdPath('/week-menus/' + week()));
+        expected = Number(remote.menu?.version||0);
+      }
+      const result = await request(householdPath('/week-menus/' + week()),'PUT',
+        {...adapter.currentMenu(),expected_version:expected});
+      session.menuVersion = Number(result.menu.version);
+      adapter.markMenuSaved();
+      session.message = '✅ Menu de la semaine partagé avec la famille.';
+    } catch (error) {
+      session.message = '⚠ Menu local conservé : '+error.message+' (publiez-le ou rechargez le menu familial).';
+    } finally { session.menuSaving = false; renderPanel(); }
+  }
+  function recordMenuChange() {
+    if (!session.household || session.mode !== 'live' || session.menuVersion == null) return;
+    void publishMenu(false);
+  }
+  async function discardMenu() {
+    try {
+      const data = await request(householdPath('/week-menus/' + week()));
+      if (!data.menu || !adapter.applyMenu(data.menu)) throw new Error('Menu familial introuvable');
+      session.menuVersion = Number(data.menu.version);
+      session.message = 'Menu familial rechargé.';
+    } catch (e) { session.message = '⚠ '+e.message; }
+    renderPanel();
   }
   async function start() {
     if (!session.token) { setMode('offline'); return; }
@@ -156,6 +300,7 @@
       session.household = (me.households || [])[0] || null;
       if (!session.household) throw new Error('Ce compte ne fait partie d’aucune famille.');
       loadFavoritePending();
+      loadProgressPending();
       if (isLinked()) {
         let oldOutbox = null;
         try { oldOutbox = JSON.parse(localStorage.getItem(OUTBOX_KEY)); } catch (_) {}
@@ -170,6 +315,7 @@
           if (session.queued.size) return;
         }
         await syncExtras();
+        try { await syncMenu(); } catch (e) { session.message = '⚠ Menu familial : '+e.message; }
         await snapshotAndApply();
         setMode('live', session.message.startsWith('⚠')?session.message:'Vos achats, favoris et archives sont partagés avec la famille.');
       } else {
@@ -198,8 +344,9 @@
           });
         }
       }
-      localStorage.setItem(LINK_KEY, localKey());
-      await syncExtras();
+      localStorage.setItem(LINK_KEY,session.household.id);
+      await syncExtras(action==='import');
+      try { await syncMenu(); } catch (e) { session.message = '⚠ Menu familial : '+e.message; }
       await snapshotAndApply();
       setMode('live', 'Synchronisation familiale activée.');
     } catch (error) {
@@ -252,11 +399,13 @@
     if (!isLinked()) { setMode('choose', 'Nouvelle semaine : choisissez la liste familiale.'); return; }
     if (session.queued.size) { await flush(); return; }
     if (Object.keys(session.favoritePending).length) await flushFavorites();
+    if (Object.keys(session.progressPending).length) await flushProgress();
     session.busy = true;
     try {
       const data = await request(householdPath('/events?after=' + session.lastEvent));
       if ((data.events || []).length) {
         if (data.events.some(e=>e.kind==='archive.saved')) await syncArchives();
+        if (data.events.some(e=>e.kind==='weekly-menu.changed')) await syncMenu();
         await snapshotAndApply();
         session.message = 'Achats et favoris actualisés depuis les autres téléphones.';
       }
@@ -270,8 +419,7 @@
       const data = await request('/api/login', 'POST', {
         email: String(input.get('email') || ''), password: String(input.get('password') || '')
       });
-      session.token = data.access_token;
-      localStorage.setItem(AUTH_KEY, session.token);
+      keepSession(data);
       await start();
     } catch (error) { setMode('offline', error.message); }
   }
@@ -285,8 +433,7 @@
         password: String(input.get('password') || ''),
         invitation: String(input.get('invitation') || '').trim()
       });
-      session.token = data.access_token;
-      localStorage.setItem(AUTH_KEY, session.token);
+      keepSession(data);
       await start();
     } catch (error) { setMode('offline', error.message); }
   }
@@ -299,20 +446,65 @@
     } catch (error) { setMessage(error.message); }
   }
   function logout() {
-    session.token = ''; session.household = null; session.profile = null;
-    session.queued.clear(); session.generations.clear(); session.favoritePending={}; session.invitation = ''; session.lastEvent = 0;
-    localStorage.removeItem(AUTH_KEY);
+    const refreshToRevoke=session.refreshToken;
+    if(refreshToRevoke) void fetch(API+'/api/session/logout',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:refreshToRevoke}),cache:'no-store'
+    }).catch(()=>{});
+    clearCredentials();
+    session.household = null; session.profile = null;session.menuVersion=null;
+    session.queued.clear(); session.generations.clear(); session.favoritePending={};session.progressPending={}; session.invitation = ''; session.lastEvent = 0;
     setMode('offline', 'Déconnecté. Les données déjà présentes sur cet appareil sont conservées.');
+  }
+  async function askPasswordReset(form) {
+    const data=new FormData(form);
+    try {
+      const result=await request('/api/password-reset/request','POST',
+        {email:String(data.get('email')||'')});
+      setMessage(result.message||'Vérifie ta boîte e-mail.');
+    }catch(e){setMessage(e.message);}
+  }
+  async function confirmPasswordReset(form) {
+    const data=new FormData(form);
+    const password=String(data.get('password')||'');
+    if(password!==String(data.get('confirm')||'')){setMessage('Les deux mots de passe sont différents.');return;}
+    try {
+      await request('/api/password-reset/confirm','POST',{token:resetCode,new_password:password});
+      resetCode=null;
+      window.history.replaceState({},'',window.location.pathname+window.location.search);
+      clearCredentials();
+      setMode('offline','✅ Mot de passe modifié. Connecte-toi avec le nouveau.');
+    }catch(e){setMessage(e.message);}
+  }
+  async function changePassword(form) {
+    const data=new FormData(form),newPassword=String(data.get('new')||'');
+    if(newPassword!==String(data.get('confirm')||'')){setMessage('Les deux mots de passe sont différents.');return;}
+    try{
+      await request('/api/password/change','POST',
+        {current_password:String(data.get('current')||''),new_password:newPassword});
+      logout();
+      setMode('offline','✅ Mot de passe changé. Reconnecte-toi avec le nouveau.');
+    }catch(e){setMessage(e.message);}
   }
   function renderPanel() {
     const target = document.getElementById('family-sync-panel');
     if (!target) return;
     let content = '<div class="card sheet" style="margin-bottom:16px"><h2 style="margin:0 0 8px">👨‍👩‍👧‍👦 Courses en famille</h2>';
-    if (session.mode === 'offline' || session.mode === 'error') {
+    if (resetCode) {
+      content += '<p>🔐 Choisis un nouveau mot de passe (12 caractères minimum).</p>'
+        + '<form id="family-password-confirm" class="manual-add">'
+        + '<input class="field" name="password" type="password" autocomplete="new-password" minlength="12" placeholder="Nouveau mot de passe" required>'
+        + '<input class="field" name="confirm" type="password" autocomplete="new-password" minlength="12" placeholder="Confirmer le mot de passe" required>'
+        + '<button class="btn" type="submit">Enregistrer mon nouveau mot de passe</button></form>';
+    } else if (session.mode === 'offline' || session.mode === 'error') {
       content += '<p class="small">Connectez chaque téléphone à votre famille pour retrouver les coches en direct. Sans connexion, votre liste locale reste utilisable.</p>'
        + '<form id="family-login" class="manual-add" autocomplete="on"><input class="field" type="email" name="email" autocomplete="username" placeholder="Adresse e-mail" required>'
        + '<input class="field" type="password" name="password" autocomplete="current-password" placeholder="Mot de passe" required>'
        + '<button class="btn" type="submit">Se connecter</button></form>'
+       + '<details style="margin-top:10px"><summary>Mot de passe oublié ?</summary>'
+       + '<form id="family-password-request" class="manual-add" style="margin-top:10px">'
+       + '<input class="field" type="email" name="email" autocomplete="email" placeholder="Adresse e-mail du compte" required>'
+       + '<button class="btn btn-outline" type="submit">Recevoir un lien de récupération</button></form></details>'
        + '<details style="margin-top:10px"><summary>Je rejoins la famille avec un code</summary>'
        + '<form id="family-join" class="manual-add" style="margin-top:10px"><input class="field" name="invitation" placeholder="Code d’invitation" required>'
        + '<input class="field" type="email" name="email" autocomplete="email" placeholder="Mon e-mail" required>'
@@ -334,6 +526,19 @@
           + '<div class="mini-links"><button class="btn btn-outline btn-small" data-family="refresh">🔄 Actualiser</button>'
           + '<button class="btn btn-outline btn-small" data-family="retry">Réessayer un envoi</button></div>';
       }
+      if (session.mode === 'live' && adapter.menuDirty()) {
+        content += '<div class="notice notice-amber"><b>Menu de la semaine modifié sur ce téléphone.</b>'
+          + '<div class="mini-links"><button class="btn btn-small" data-family="publish-menu">Partager mon menu</button>'
+          + '<button class="btn btn-small btn-outline" data-family="reload-menu">Recharger le menu familial</button></div></div>';
+      }
+      if (adapter.isAccountPage()) {
+        content += '<details style="margin-top:12px"><summary>🔑 Changer mon mot de passe</summary>'
+          + '<form id="family-password-change" class="manual-add" style="margin-top:10px">'
+          + '<input class="field" name="current" type="password" autocomplete="current-password" placeholder="Mot de passe actuel" required>'
+          + '<input class="field" name="new" type="password" autocomplete="new-password" minlength="12" placeholder="Nouveau mot de passe" required>'
+          + '<input class="field" name="confirm" type="password" autocomplete="new-password" minlength="12" placeholder="Confirmer le nouveau mot de passe" required>'
+          + '<button class="btn" type="submit">Changer le mot de passe</button></form></details>';
+      }
       if (session.household?.role === 'owner') {
         content += '<details style="margin-top:8px"><summary>Inviter un membre de la famille</summary>'
           + '<button class="btn btn-outline btn-small" data-family="invite" style="margin-top:8px">Créer un code (48 h)</button>';
@@ -352,6 +557,9 @@
   document.addEventListener('submit', event => {
     if (event.target.id === 'family-login') { event.preventDefault(); void login(event.target); }
     if (event.target.id === 'family-join') { event.preventDefault(); void join(event.target); }
+    if (event.target.id === 'family-password-request') { event.preventDefault(); void askPasswordReset(event.target); }
+    if (event.target.id === 'family-password-confirm') { event.preventDefault(); void confirmPasswordReset(event.target); }
+    if (event.target.id === 'family-password-change') { event.preventDefault(); void changePassword(event.target); }
   });
   document.addEventListener('click', event => {
     const button = event.target.closest('[data-family]');
@@ -360,19 +568,25 @@
     if (action === 'receive') void link('receive');
     if (action === 'import') void link('import');
     if (action === 'refresh') void snapshotAndApply().catch(e => setMessage(e.message));
-    if (action === 'retry') { void flush(); void flushFavorites(); void syncArchives().catch(e=>setMessage(e.message)); }
+    if (action === 'retry') { void flush(); void flushFavorites(); void flushProgress(); void syncArchives().catch(e=>setMessage(e.message)); }
     if (action === 'invite') void invitation();
     if (action === 'logout') logout();
+    if (action === 'publish-menu' && window.confirm('Partager ce menu avec toute la famille ?')) void publishMenu(true);
+    if (action === 'reload-menu' && window.confirm('Remplacer le menu local par celui de la famille ?')) void discardMenu();
     if (action === 'copy-invite' && session.invitation) {
       if (navigator.clipboard?.writeText) void navigator.clipboard.writeText(session.invitation);
       else window.prompt('Copiez le code :', session.invitation);
     }
   });
 
-  window.MonPanierFamily = { renderPanel, recordChange, setFavorite, archiveWeek };
+  window.MonPanierFamily = { renderPanel, recordChange, setFavorite, archiveWeek, recordMenuChange, recordRecipeDone };
   window.addEventListener('mon-panier:render', renderPanel);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void poll(); });
   setInterval(() => { void poll(); }, 8000);
   renderPanel();
-  if (session.token) void start();
+  if (resetCode) renderPanel();
+  else if (session.token || session.refreshToken) void (async()=>{
+    try { if(session.refreshToken) await refreshAccess(); await start(); }
+    catch(e) { setMode('offline',e.message); }
+  })();
 })();
