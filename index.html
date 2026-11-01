@@ -299,9 +299,11 @@ function load(){
  }
  state.aiRecipes=previous.aiRecipes&&typeof previous.aiRecipes==='object'?previous.aiRecipes:{};
  for(const [id,recipe] of Object.entries(state.aiRecipes)){if(validAIRecipe(id,recipe))DATA.recipes[id]=recipe}
- state.archives=Array.isArray(previous.archives)?previous.archives.filter(x=>x&&isValidPlan(x.plan)&&typeof x.key==='string').slice(0,52):[];
- for(const archive of state.archives)for(const [key,recipe] of Object.entries(archive.recipes||{}))
+ const archivedCandidates=Array.isArray(previous.archives)?previous.archives:[];
+ // Restaurer les définitions AVANT de valider les plans d'anciennes semaines IA.
+ for(const archive of archivedCandidates)for(const [key,recipe] of Object.entries(archive?.recipes||{}))
    if(recipe&&Array.isArray(recipe.items)&&recipe.items.every(i=>DATA.ingredients[i.id]))DATA.recipes[key]=recipe;
+ state.archives=archivedCandidates.filter(x=>x&&isValidPlan(x.plan)&&typeof x.key==='string').slice(0,52);
  state.stores=Array.isArray(state.stores)?state.stores.filter(id=>stores.some(s=>s.id===id)):defaults.stores.slice();
  if(!state.interStoreAddedV1){if(!state.stores.includes('inter'))state.stores.push('inter');state.interStoreAddedV1=true;}
  state.storeUnavailable=state.storeUnavailable&&typeof state.storeUnavailable==='object'?state.storeUnavailable:{};
