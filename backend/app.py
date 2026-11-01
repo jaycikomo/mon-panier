@@ -102,6 +102,7 @@ class Shopping(BaseModel):
     quantity_text: str = Field(default="", max_length=100)
     store_name: str = Field(default="", max_length=100)
     is_bought: bool = False
+    unavailable_stores: list[Literal['aldi', 'lidl-destrousse', 'netto', 'inter']] | None = Field(default=None, max_length=4)
     expected_version: int | None = Field(default=None, ge=0)
 
 
@@ -131,6 +132,15 @@ class Consumption(BaseModel):
     recipe_key: str | None = Field(default=None, max_length=100)
     description: str = Field(default="", max_length=300)
     nutrition: dict[str, float] = Field(default_factory=dict)
+
+
+class Favorite(BaseModel):
+    starred: bool
+
+
+class WeeklyArchive(BaseModel):
+    plan: list[list[str]] = Field(min_length=7, max_length=7)
+    recipes: dict[str, dict] = Field(min_length=1, max_length=60)
 
 
 class Pantry(BaseModel):
@@ -270,11 +280,15 @@ def snapshot(hid: UUID, week: date, account_id: UUID = Depends(actor)):
         pantry = conn.execute(
             "SELECT * FROM pantry_items WHERE household_id=%s ORDER BY ingredient_key",
             (hid,)).fetchall()
+        favorites = conn.execute(
+            "SELECT recipe_key,starred FROM favorite_recipes WHERE household_id=%s",
+            (hid,)).fetchall()
         latest = conn.execute(
             "SELECT COALESCE(max(id),0) AS id FROM sync_events WHERE household_id=%s",
             (hid,)).fetchone()["id"]
     return {"shopping": shopping, "recipes": recipes, "plans": plans,
-            "consumed": consumed, "pantry": pantry, "last_event_id": latest}
+            "consumed": consumed, "pantry": pantry, "favorites": favorites,
+            "last_event_id": latest}
 
 
 @app.get("/api/households/{hid}/events")
@@ -307,21 +321,24 @@ def set_shopping(hid: UUID, week: date, key: str,
         if existing:
             row = conn.execute(
                 """UPDATE shopping_items SET name=%s,quantity_text=%s,store_name=%s,
-                   is_bought=%s,bought_by=%s,updated_by=%s,updated_at=now(),
-                   version=version+1 WHERE id=%s RETURNING *""",
+                   is_bought=%s,bought_by=%s,unavailable_stores=COALESCE(%s,unavailable_stores),
+                   updated_by=%s,updated_at=now(),version=version+1 WHERE id=%s RETURNING *""",
                 (data.name, data.quantity_text, data.store_name, data.is_bought,
-                 account_id if data.is_bought else None, account_id, existing["id"])).fetchone()
+                 account_id if data.is_bought else None,
+                 Jsonb(data.unavailable_stores) if data.unavailable_stores is not None else None,
+                 account_id, existing["id"])).fetchone()
         else:
             row = conn.execute(
                 """INSERT INTO shopping_items
                    (household_id,week_key,ingredient_key,name,quantity_text,store_name,
-                    is_bought,bought_by,updated_by)
-                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
+                    is_bought,bought_by,updated_by,unavailable_stores)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *""",
                 (hid, week, key, data.name, data.quantity_text, data.store_name,
-                 data.is_bought, account_id if data.is_bought else None, account_id)).fetchone()
+                 data.is_bought, account_id if data.is_bought else None, account_id,
+                 Jsonb(data.unavailable_stores or []))).fetchone()
         event(conn, hid, account_id, "shopping.changed",
               {"week": week.isoformat(), "key": key, "is_bought": data.is_bought,
-               "version": row["version"]})
+               "unavailable_stores": row["unavailable_stores"], "version": row["version"]})
     return row
 
 
@@ -340,6 +357,59 @@ def delete_shopping(hid: UUID, week: date, key: str, account_id: UUID = Depends(
             event(conn, hid, account_id, "shopping.deleted",
                   {"week": week.isoformat(), "key": key})
     return {"deleted": bool(deleted)}
+
+
+@app.put("/api/households/{hid}/favorites/{key}")
+def set_favorite(hid: UUID, key: str, data: Favorite,
+                 account_id: UUID = Depends(actor)):
+    """A single family-wide star, independent of the purchased list."""
+    if not 1 <= len(key) <= 100:
+        error(422, "Identifiant de recette invalide")
+    with db() as conn:
+        member(conn, hid, account_id)
+        conn.execute(
+            """INSERT INTO favorite_recipes(household_id,recipe_key,starred,updated_by)
+               VALUES (%s,%s,%s,%s)
+               ON CONFLICT (household_id,recipe_key) DO UPDATE
+               SET starred=EXCLUDED.starred,updated_by=EXCLUDED.updated_by,
+                   updated_at=now()""",
+            (hid, key, data.starred, account_id))
+        event(conn, hid, account_id, "favorite.changed",
+              {"key": key, "starred": data.starred})
+    return {"saved": True, "recipe_key": key, "starred": data.starred}
+
+
+@app.get("/api/households/{hid}/archives")
+def list_archives(hid: UUID, account_id: UUID = Depends(actor)):
+    with db() as conn:
+        member(conn, hid, account_id)
+        rows = conn.execute(
+            """SELECT week_key,plan,recipes,archived_at FROM weekly_recipe_archives
+               WHERE household_id=%s ORDER BY week_key DESC LIMIT 52""",
+            (hid,)).fetchall()
+    return {"archives": rows}
+
+
+@app.put("/api/households/{hid}/archives/{week}")
+def save_archive(hid: UUID, week: date, data: WeeklyArchive,
+                 account_id: UUID = Depends(actor)):
+    """The first saved historical menu remains the family's baseline."""
+    if week.weekday() != 0 or any(len(day) != 4 for day in data.plan):
+        error(422, "Archives : semaine de lundi et quatre recettes par jour requises")
+    if any(key not in data.recipes for day in data.plan for key in day):
+        error(422, "Archive incomplète : définitions de recettes manquantes")
+    with db() as conn:
+        member(conn, hid, account_id)
+        row = conn.execute(
+            """INSERT INTO weekly_recipe_archives
+               (household_id,week_key,plan,recipes,archived_by)
+               VALUES (%s,%s,%s,%s,%s)
+               ON CONFLICT (household_id,week_key) DO NOTHING
+               RETURNING week_key""",
+            (hid, week, Jsonb(data.plan), Jsonb(data.recipes), account_id)).fetchone()
+        if row:
+            event(conn, hid, account_id, "archive.saved", {"week": week.isoformat()})
+    return {"saved": bool(row), "week": week.isoformat()}
 
 
 @app.put("/api/households/{hid}/pantry/{key}")
