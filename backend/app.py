@@ -28,7 +28,7 @@ if len(JWT_SECRET) < 40 or len(BOOTSTRAP_TOKEN) < 40 or not ORIGINS:
 
 app = FastAPI(title="Mon Panier — API familiale", version="0.1.0",
               docs_url=None, redoc_url=None, openapi_url=None)
-app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_methods=["GET", "POST", "PUT"],
+app.add_middleware(CORSMiddleware, allow_origins=ORIGINS, allow_methods=["GET", "POST", "PUT", "DELETE"],
                    allow_headers=["Authorization", "Content-Type", "X-Bootstrap-Token"])
 bearer = HTTPBearer(auto_error=False)
 hasher = PasswordHasher()
@@ -323,6 +323,23 @@ def set_shopping(hid: UUID, week: date, key: str,
               {"week": week.isoformat(), "key": key, "is_bought": data.is_bought,
                "version": row["version"]})
     return row
+
+
+@app.delete("/api/households/{hid}/shopping/{week}/{key}")
+def delete_shopping(hid: UUID, week: date, key: str, account_id: UUID = Depends(actor)):
+    """Remove a manual shopping item and notify the other family devices."""
+    if not 1 <= len(key) <= 100 or not key.startswith("custom-"):
+        error(422, "Seuls les ajouts personnels peuvent être supprimés")
+    with db() as conn:
+        member(conn, hid, account_id)
+        deleted = conn.execute(
+            """DELETE FROM shopping_items WHERE household_id=%s
+               AND week_key=%s AND ingredient_key=%s RETURNING id""",
+            (hid, week, key)).fetchone()
+        if deleted:
+            event(conn, hid, account_id, "shopping.deleted",
+                  {"week": week.isoformat(), "key": key})
+    return {"deleted": bool(deleted)}
 
 
 @app.put("/api/households/{hid}/pantry/{key}")
