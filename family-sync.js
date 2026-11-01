@@ -550,6 +550,7 @@
           + '<p class="small muted">« Ajouter » fusionne les achats cochés avec ceux déjà partagés ; cela ne décoche pas ceux des autres.</p>';
       } else if (session.mode === 'live') {
         content += '<p>✅ <b>Synchronisation active</b> · vérification automatique toutes les 8 secondes.</p>'
+          + '<p class="small">🔐 Connexion mémorisée sur cet appareil, renouvelée automatiquement.</p>'
           + '<div class="mini-links"><button class="btn btn-outline btn-small" data-family="refresh">🔄 Actualiser</button>'
           + '<button class="btn btn-outline btn-small" data-family="retry">Réessayer un envoi</button></div>';
       }
