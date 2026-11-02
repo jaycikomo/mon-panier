@@ -1,9 +1,8 @@
 name: Mon Panier - Menus du lundi depuis sauvegarde mensuelle
 
 on:
-  schedule:
-    # Chaque lundi : publier la semaine préparée ; IA uniquement tous les quatre lundis.
-    - cron: '37 5 * * 1'
+  # Génération planifiée volontairement en pause ; lancement manuel possible.
+  # Le site lit les deux semaines directement dans le cache GitHub.
   workflow_dispatch:
 
 permissions:
