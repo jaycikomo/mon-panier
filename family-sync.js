@@ -18,7 +18,7 @@
 
   const session = { token: localStorage.getItem(AUTH_KEY) || '',
     refreshToken: localStorage.getItem(REFRESH_KEY) || '', household: null,
-    profile: null, mode: 'offline', message: '', invitation: '', lastEvent: 0,
+    profile: null, mode: 'offline', message: '', loginEmail: '', invitation: '', lastEvent: 0,
     versions: {}, busy: false, pending: new Set(), queued: new Set(), generations: new Map(), favoritePending: {}, favoriteFlushing: false, menuVersion: null, menuSaving: false,
     progressPending: {}, progressFlushing: false, syncedWeek: null };
 
@@ -45,21 +45,31 @@
   }
   let refreshing = null;
   async function refreshAccess() {
+    const savedToken=localStorage.getItem(REFRESH_KEY);
+    if (savedToken) session.refreshToken=savedToken;
     if (!session.refreshToken) throw new Error('Reconnectez-vous pour activer la connexion durable.');
     if (refreshing) return refreshing;
     refreshing = (async () => {
-      let response;
-      try {
-        response = await fetch(API + '/api/session/refresh', {
-          method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
-          body:JSON.stringify({refresh_token:session.refreshToken}),cache:'no-store'
-        });
-      } catch (_) { throw new Error('Serveur familial injoignable : session conservée pour réessayer.'); }
-      if (!response.ok) {
-        if (response.status === 401) clearCredentials();
-        throw new Error('Renouvellement impossible : reconnectez-vous.');
+      for (let attempt=0;attempt<2;attempt++) {
+        const usedToken=session.refreshToken;
+        let response;
+        try {
+          response = await fetch(API + '/api/session/refresh', {
+            method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
+            body:JSON.stringify({refresh_token:usedToken}),cache:'no-store'
+          });
+        } catch (_) { throw new Error('Serveur familial injoignable : session conservée pour réessayer.'); }
+        if (response.ok) { keepSession(await response.json()); return; }
+        // Un autre onglet Safari a pu renouveler le même compte entre-temps.
+        const newerToken=localStorage.getItem(REFRESH_KEY);
+        if (response.status===401 && newerToken && newerToken!==usedToken) {
+          session.refreshToken=newerToken;
+          continue;
+        }
+        if (response.status===401) clearCredentials();
+        throw new Error('Session expirée : reconnectez-vous dans Mon compte.');
       }
-      keepSession(await response.json());
+      throw new Error('Connexion momentanément indisponible : réessayez.');
     })();
     try { await refreshing; } finally { refreshing=null; }
   }
@@ -449,6 +459,7 @@
   }
   async function login(form) {
     const input = new FormData(form);
+    session.loginEmail = String(input.get('email') || '').trim();
     setMode('connecting', 'Connexion…');
     try {
       const data = await request('/api/login', 'POST', {
@@ -456,7 +467,10 @@
       });
       keepSession(data);
       await start();
-    } catch (error) { setMode('offline', error.message); }
+    } catch (error) {
+      const badCredentials = /Identifiants incorrects/i.test(error.message);
+      setMode('offline', badCredentials ? '⚠ Adresse e-mail ou mot de passe incorrect. Vérifiez vos informations et réessayez.' : '⚠ ' + error.message);
+    }
   }
   async function join(form) {
     const input = new FormData(form);
@@ -487,7 +501,7 @@
       body:JSON.stringify({refresh_token:refreshToRevoke}),cache:'no-store'
     }).catch(()=>{});
     clearCredentials();
-    session.household = null; session.profile = null;session.menuVersion=null;
+    session.household = null; session.profile = null;session.menuVersion=null;session.loginEmail='';
     session.queued.clear(); session.generations.clear(); session.favoritePending={};session.progressPending={}; session.invitation = ''; session.lastEvent = 0;
     setMode('offline', 'Déconnecté. Les données déjà présentes sur cet appareil sont conservées.');
   }
@@ -554,9 +568,10 @@
         + '<button class="btn" type="submit">Enregistrer mon nouveau mot de passe</button></form>';
     } else if (session.mode === 'offline' || session.mode === 'error') {
       content += '<p class="small">Connectez chaque téléphone à votre famille pour retrouver les coches en direct. Sans connexion, votre liste locale reste utilisable.</p>'
-       + '<form id="family-login" class="manual-add" autocomplete="on"><input class="field" type="email" name="email" autocomplete="username" placeholder="Adresse e-mail" required>'
+       + '<form id="family-login" class="manual-add" autocomplete="on"><input class="field" type="email" name="email" autocomplete="username" placeholder="Adresse e-mail" value="' + escapeHTML(session.loginEmail) + '" required>'
        + '<input class="field" type="password" name="password" autocomplete="current-password" placeholder="Mot de passe" required>'
        + '<button class="btn" type="submit">Se connecter</button></form>'
+        + (session.mode === 'error' && (session.token || session.refreshToken) ? '<button class="btn btn-outline btn-small" style="margin-top:10px" data-family="reconnect">↻ Réessayer la connexion enregistrée</button>' : '')
        + '<details style="margin-top:10px"><summary>Mot de passe oublié ?</summary>'
        + '<form id="family-password-request" class="manual-add" style="margin-top:10px">'
        + '<input class="field" type="email" name="email" autocomplete="email" placeholder="Adresse e-mail du compte" required>'
@@ -607,7 +622,7 @@
       }
       content += '<div style="margin-top:12px"><button class="btn btn-outline btn-small" data-family="logout">Se déconnecter</button></div>';
     }
-    if (session.message) content += '<p class="small" role="status">' + escapeHTML(session.message) + '</p>';
+    if (session.message) content += '<p class="small" role="' + (session.message.startsWith('⚠') ? 'alert' : 'status') + '">' + escapeHTML(session.message) + '</p>';
     content += '</div>';
     target.innerHTML = content;
   }
@@ -627,6 +642,7 @@
     if (action === 'refresh') void snapshotAndApply().catch(e => setMessage(e.message));
     if (action === 'retry') { void flush(); void flushFavorites(); void flushProgress(); void syncArchives(true).catch(e=>setMessage(e.message)); }
     if (action === 'invite') void invitation();
+    if (action === 'reconnect') void restoreSession();
     if (action === 'logout') logout();
     if (action === 'publish-menu' && window.confirm('Partager ce menu avec toute la famille ?')) void publishMenu(true);
     if (action === 'reload-menu' && window.confirm('Remplacer le menu local par celui de la famille ?')) void discardMenu();
@@ -638,12 +654,22 @@
 
   window.MonPanierFamily = { renderPanel, recordChange, setFavorite, archiveWeek, recordMenuChange, recordRecipeDone };
   window.addEventListener('mon-panier:render', renderPanel);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void poll(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if ((session.token || session.refreshToken) && (session.mode === 'error' || session.mode === 'offline')) void restoreSession();
+    else void poll();
+  });
   setInterval(() => { void poll(); }, 8000);
+  async function restoreSession() {
+    if (!session.token && !session.refreshToken) return;
+    try {
+      // Réutiliser un JWT valide sans révoquer la session longue durée à chaque ouverture.
+      if (!session.token && session.refreshToken) await refreshAccess();
+      await start();
+    } catch (e) {
+      setMode(session.token || session.refreshToken ? 'error' : 'offline', '⚠ ' + e.message);
+    }
+  }
   renderPanel();
-  if (resetCode) renderPanel();
-  else if (session.token || session.refreshToken) void (async()=>{
-    try { if(session.refreshToken) await refreshAccess(); await start(); }
-    catch(e) { setMode('offline',e.message); }
-  })();
+  if (!resetCode && (session.token || session.refreshToken)) void restoreSession();
 })();
