@@ -90,8 +90,9 @@
   function localKey() {
     return session.household ? session.household.id + ':' + week() : '';
   }
+  function outboxStorageKey() { return OUTBOX_KEY + ':' + week(); }
   function persistOutbox() {
-    localStorage.setItem(OUTBOX_KEY, JSON.stringify({ key: localKey(), commands: [...session.queued] }));
+    localStorage.setItem(outboxStorageKey(), JSON.stringify({ key: localKey(), commands: [...session.queued] }));
   }
   function isLinked() {
     if (!session.household) return false;
@@ -308,7 +309,7 @@
       loadProgressPending();
       if (isLinked()) {
         let oldOutbox = null;
-        try { oldOutbox = JSON.parse(localStorage.getItem(OUTBOX_KEY)); } catch (_) {}
+        try { oldOutbox = JSON.parse(localStorage.getItem(outboxStorageKey()) || localStorage.getItem(OUTBOX_KEY)); } catch (_) {}
         if (oldOutbox?.key === localKey() && Array.isArray(oldOutbox.commands)) {
           session.queued = new Set(oldOutbox.commands.filter(c => /^(put|delete):[\w-]{1,100}$/.test(c)));
         }

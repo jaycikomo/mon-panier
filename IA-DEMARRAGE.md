@@ -1,5 +1,7 @@
 # Mon Panier — quatre semaines en une seule génération IA
 
+> **Mise en pause le 2 novembre 2026.** La planification automatique des recettes IA est désactivée dans `.github/workflows/recettes-ia.yml`. Les semaines déjà enregistrées, notamment celles du 2 et du 9 novembre, sont lues directement depuis `data/ai/weeks/` par le site : aucun nouvel appel payant. Pour lancer une génération ponctuelle, utiliser **Run workflow** dans GitHub Actions ; pour réactiver la programmation des lundis, rétablir l'entrée `schedule` du workflow.
+
 ## Fonctionnement depuis le 18 octobre 2026
 - **Un lundi sur quatre**, si aucune semaine sauvegardée n'est disponible, GitHub appelle **une seule fois** le modèle texte GPT-5 mini pour préparer **32 recettes de base**.
 - Le script crée et valide immédiatement quatre semaines de menus de 7 jours, avec **20 recettes sélectionnées par semaine** : petit-déjeuner, déjeuner, collation et dîner.
@@ -41,5 +43,5 @@ Les macros sont recalculées en Python à partir du catalogue générique et les
 ## Dépannage
 - Si `data/ai/latest.json` ne correspond pas au lundi courant, ouvrir le workflow **Menus du lundi depuis sauvegarde mensuelle** et lire son erreur. Sur une semaine déjà enregistrée, il ne doit pas appeler OpenAI.
 - En cas de manque de crédit au renouvellement du lot, la génération ne publiera pas une nouvelle semaine et les menus habituels restent disponibles.
-- Le site ne synchronise pas les listes de courses entre téléphones : partage par lien = copie, pas synchronisation en temps réel.
+- Après connexion au compte familial, les coches et les recettes sont synchronisées par l’API privée entre les téléphones. Le partage par lien reste une copie facultative.
 - GitHub peut retarder l'exécution planifiée ; actualisez l'application après la publication.
