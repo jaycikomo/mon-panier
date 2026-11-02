@@ -93,7 +93,10 @@
       if (response.status === 401 && !path.endsWith('/login') && !path.endsWith('/join')) {
         clearCredentials();session.mode = 'offline';
       }
-      throw new Error(typeof body.detail === 'string' ? body.detail : 'Erreur HTTP ' + response.status);
+      const err = new Error(typeof body.detail === 'string' ? body.detail : 'Erreur HTTP ' + response.status);
+      err.status = response.status;
+      err.details = body.detail;
+      throw err;
     }
     return body;
   }
@@ -460,6 +463,10 @@
   async function login(form) {
     const input = new FormData(form);
     session.loginEmail = String(input.get('email') || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(session.loginEmail)) {
+      setMode('offline', '⚠ Adresse e-mail invalide. Vérifie ton adresse (exemple : nom@domaine.fr).');
+      return;
+    }
     setMode('connecting', 'Connexion…');
     try {
       const data = await request('/api/login', 'POST', {
@@ -468,8 +475,13 @@
       keepSession(data);
       await start();
     } catch (error) {
-      const badCredentials = /Identifiants incorrects/i.test(error.message);
-      setMode('offline', badCredentials ? '⚠ Adresse e-mail ou mot de passe incorrect. Vérifiez vos informations et réessayez.' : '⚠ ' + error.message);
+      const badCredentials = error.status === 401 || /Identifiants incorrects/i.test(error.message);
+      const invalidForm = error.status === 422;
+      setMode('offline', badCredentials
+        ? '⚠ Adresse e-mail ou mot de passe incorrect. Vérifie les deux champs, ou utilise « Mot de passe oublié ? ».'
+        : invalidForm
+          ? '⚠ Informations de connexion invalides. Vérifie le format de ton adresse e-mail et saisis un mot de passe valide.'
+          : '⚠ ' + error.message);
     }
   }
   async function join(form) {
